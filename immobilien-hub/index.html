@@ -1,0 +1,1510 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Immo-Hub">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#EEF0F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#11151A" media="(prefers-color-scheme: dark)">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" type="image/png" href="../shared/icons/icon-192.png">
+<title>Immobilien-Hub</title>
+<style>
+@font-face{font-family:'IBM Plex Mono';src:url(fonts/plexmono-400.woff) format('woff');font-weight:400 500;font-style:normal;font-display:swap}
+@font-face{font-family:'IBM Plex Mono';src:url(fonts/plexmono-600.woff) format('woff');font-weight:600 700;font-style:normal;font-display:swap}
+/* Layout: Startseite mit Kennzahlen und App-Kacheln, ein Reiter für den Mieten-Abgleich, einer für Sicherung und Einstellungen. Teal als Akzent, damit der Hub sich von den Fach-Apps absetzt. */
+:root{
+  color-scheme:light;
+  --bg:#EEF0F3; --surface:#FFFFFF; --surface2:#F3F6F5; --ink:#142120; --muted:#566665; --line:#D3DDDB;
+  --accent:#2A3441; --accent-ink:#FFFFFF; --accent-soft:#DFE5EC;
+  --good:#17804F; --good-soft:#DCF2E6; --mid:#8F5F00; --mid-soft:#FBEECB; --bad:#B3302F; --bad-soft:#F8DDDC;
+  --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  padding-top:env(safe-area-inset-top,0px);
+}
+@media (prefers-color-scheme: dark){:root{
+  color-scheme:dark;
+  --bg:#11151A; --surface:#17201F; --surface2:#1D2928; --ink:#E4EEEC; --muted:#9BB0AD; --line:#2A3A38;
+  --accent:#A9BDD2; --accent-ink:#101822; --accent-soft:#222C38;
+  --good:#47C48A; --good-soft:#12301F; --mid:#E3B341; --mid-soft:#352A0E; --bad:#F27F7D; --bad-soft:#3A1717;}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45;padding-inline:16px;padding-block:0 110px}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--accent)}
+.wrap{max-width:680px;margin-inline:auto}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;margin-inline:-16px;padding:10px 16px;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar h1{font-size:20px;font-weight:600;margin:0}
+.bar .sub{display:block;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-height:42px;padding:0 14px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.small{min-height:34px;padding:0 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+main{padding-block:14px 0}
+h2{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:22px 4px 8px}
+h2:first-child{margin-top:2px}
+.note{font-size:13px;color:var(--muted);margin:8px 4px}
+.row-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.p-good{background:var(--good-soft);color:var(--good)} .p-mid{background:var(--mid-soft);color:var(--mid)} .p-bad{background:var(--bad-soft);color:var(--bad)} .p-none{background:var(--surface2);color:var(--muted)}
+.t-good{color:var(--good)} .t-mid{color:var(--mid)} .t-bad{color:var(--bad)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.cards{display:flex;flex-direction:column;gap:10px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:22px 18px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:6px}
+.warn{background:var(--mid-soft);border:1px solid var(--mid);border-radius:12px;padding:10px 12px;font-size:13.5px;margin:0 0 10px}
+.ok{background:var(--good-soft);border:1px solid var(--good);border-radius:12px;padding:10px 12px;font-size:13.5px;margin:0 0 10px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:stretch}
+.kpi .s{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 12px;min-width:0}
+.kpi .l{font-size:12px;color:var(--muted);line-height:1.3;overflow-wrap:anywhere}
+.kpi .v{font-family:var(--font-mono);font-weight:600;font-size:17px;margin-top:3px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpi .s{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.3}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;min-height:112px}
+.tile b{font-size:14.5px;min-width:0;overflow-wrap:anywhere;line-height:1.2}
+.tile span.d{font-size:12.5px;color:var(--muted);line-height:1.35;flex:1}
+.tile .pill{align-self:flex-start}
+.li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:12px 14px;border-top:1px solid var(--line);align-items:center}
+.li:first-child{border-top:0}
+.li .a{font-weight:500} .li .b{font-size:12.5px;color:var(--muted)}
+.li.over{box-shadow:inset 4px 0 0 var(--bad)} .li.soon{box-shadow:inset 4px 0 0 var(--mid)}
+.when{font-family:var(--font-mono);font-size:12.5px;font-weight:600;text-align:right}
+.mcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 14px}
+.mcard .t{font-weight:600;font-size:16px} .mcard .a{font-size:13px;color:var(--muted);margin-top:1px}
+.mcard .cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 10px}
+.mcard .cmp div{background:var(--surface2);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--muted)}
+.mcard .cmp b{display:block;font-family:var(--font-mono);font-size:15px;color:var(--ink);margin-top:2px}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.fld input,.fld select,.fld textarea{width:100%;min-width:0;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 11px;font-size:16px;color:var(--ink)}
+.code{width:100%;min-height:140px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px;font-family:var(--font-mono);font-size:12px;line-height:1.5;color:var(--ink)}
+.pad{padding:14px}
+.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:11px 14px;border-top:1px solid var(--line);align-items:center}
+.kv:first-child{border-top:0}
+.kv small{display:block;color:var(--muted);font-size:12px}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 16px;font-size:14px;z-index:20;max-width:calc(100vw - 32px)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+.tabbar button svg{margin-bottom:2px}.tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;border:0;background:none;padding:7px 2px;border-radius:10px;color:var(--muted);font-size:11.5px;font-weight:500;min-height:50px;min-width:0}
+.tabbar button[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/*BRAND*/
+@font-face{font-family:'Bricolage Grotesque';src:url(fonts/bricolage-700.woff) format('woff');font-weight:500 800;font-style:normal;font-display:swap}
+.bar{padding-left:58px;background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 13%,var(--bg)),var(--bg))}
+.bar::before{content:'';position:absolute;left:16px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:8px;background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23fff%22 stop-opacity=%22.16%22/%3E%3Cstop offset=%221%22 stop-color=%22%23000%22 stop-opacity=%22.14%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%2264%22 height=%2264%22 rx=%2215%22 fill=%22%232A3441%22/%3E%3Crect width=%2264%22 height=%2264%22 rx=%2215%22 fill=%22url%28%23g%29%22/%3E%3Crect x=%2214%22 y=%2214%22 width=%2215%22 height=%2215%22 rx=%224%22 fill=%22%23fff%22/%3E%3Crect x=%2235%22 y=%2214%22 width=%2215%22 height=%2215%22 rx=%224%22 fill=%22%23fff%22/%3E%3Crect x=%2214%22 y=%2235%22 width=%2215%22 height=%2215%22 rx=%224%22 fill=%22%23fff%22/%3E%3Crect x=%2235%22 y=%2235%22 width=%2215%22 height=%2215%22 rx=%224%22 fill=%22%23fff%22 opacity=%22.55%22/%3E%3C/svg%3E") center/cover;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.bar h1,.empty b,.pcard .t,.mcard .t,.tile b,.hero .lab{font-family:'Bricolage Grotesque',var(--font-body)}
+.bar h1{letter-spacing:-.01em}
+.empty::before{content:'';display:block;width:60px;height:60px;margin:0 auto 12px;border-radius:15px;background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22 viewBox=%220 0 64 64%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23fff%22 stop-opacity=%22.16%22/%3E%3Cstop offset=%221%22 stop-color=%22%23000%22 stop-opacity=%22.14%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%2264%22 height=%2264%22 rx=%2215%22 fill=%22%232A3441%22/%3E%3Crect width=%2264%22 height=%2264%22 rx=%2215%22 fill=%22url%28%23g%29%22/%3E%3Crect x=%2214%22 y=%2214%22 width=%2215%22 height=%2215%22 rx=%224%22 fill=%22%23fff%22/%3E%3Crect x=%2235%22 y=%2214%22 width=%2215%22 height=%2215%22 rx=%224%22 fill=%22%23fff%22/%3E%3Crect x=%2214%22 y=%2235%22 width=%2215%22 height=%2215%22 rx=%224%22 fill=%22%23fff%22/%3E%3Crect x=%2235%22 y=%2235%22 width=%2215%22 height=%2215%22 rx=%224%22 fill=%22%23fff%22 opacity=%22.55%22/%3E%3C/svg%3E") center/cover;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+/*ENDBRAND*/
+/*TILES*/
+.tile{display:grid;grid-template-columns:38px minmax(0,1fr);gap:4px 10px;align-items:center;min-height:0;padding:14px}
+.tile .ic{grid-row:span 1;display:block;line-height:0;filter:drop-shadow(0 2px 4px rgba(0,0,0,.18))}
+.tile b{font-size:14.5px;min-width:0;overflow-wrap:anywhere;line-height:1.2}
+.tile .big,.tile .s,.tile .pill{grid-column:1/-1}
+.tile .big{font-family:var(--font-mono);font-weight:600;font-size:21px;margin-top:6px;color:color-mix(in srgb,var(--tc) 78%,var(--ink));overflow-wrap:anywhere}
+.tile .s{font-size:12.5px;color:var(--muted);line-height:1.35}
+.tile .pill{margin-top:4px;justify-self:start}
+/*ENDTILES*/
+.tile .spark{grid-column:1/-1;width:100%;max-width:130px;height:auto;display:block;margin-top:2px}
+
+/*FOLD*/
+.bstat{display:flex;align-items:center;gap:8px;margin-top:6px;border:0;background:none;padding:0;font-size:12.5px;color:var(--muted);text-align:left;width:100%}
+.bstat .pill{font-size:11.5px;padding:2px 9px}
+.bstat u{margin-left:auto;font-size:12px;color:var(--accent)}
+details.fold{margin:12px 0 0;background:transparent}
+details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 4px;-webkit-tap-highlight-color:transparent}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary h2{margin:0;flex:1;font-size:12px}
+details.fold>summary::after{content:'';width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform .15s;margin:-4px 4px 0 0}
+details.fold[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+details.fold>summary .hint{font-size:12px;color:var(--muted);font-family:var(--font-mono);white-space:nowrap}
+details.fold>.fb{padding-bottom:2px}
+.fold-tools{display:flex;gap:8px;justify-content:flex-end;margin:8px 0 -4px}
+.fold-tools button{border:0;background:none;color:var(--accent);font-size:12.5px;padding:6px 4px;text-decoration:underline}
+/*ENDFOLD*/
+
+/* Objekt-Zeitleiste */
+.tl{position:relative;margin:0;padding:0 0 0 24px;list-style:none}
+.tl::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.tl li{position:relative;padding:0 0 16px}
+.tl li:last-child{padding-bottom:0}
+.tl li::before{content:"";position:absolute;left:-22px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.tl li.erh::before{border-color:var(--good);background:var(--good)}
+.tl li.sen::before{border-color:var(--bad);background:var(--bad)}
+.tl li.now::before{background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.tl li.fut::before{border-style:dashed}
+.tl .d{font-family:var(--font-mono);font-size:11.5px;color:var(--muted);letter-spacing:.02em}
+.tl .t{font-weight:600;line-height:1.3}
+.tl .s{font-size:12.5px;color:var(--muted);line-height:1.4;margin-top:2px}
+.eff{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px}
+.eff div{background:var(--surface2);border-radius:10px;padding:7px 9px;font-size:11.5px;color:var(--muted);line-height:1.3}
+.eff b{display:block;font-family:var(--font-mono);font-size:13.5px;color:var(--ink);margin-top:2px}
+.eff b.t-good{color:var(--good)} .eff b.t-bad{color:var(--bad)}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.legend{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:6px 2px 0}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.yt{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.yt th{font-size:11px;font-weight:600;color:var(--muted);text-align:right;padding:9px 8px}
+.yt td{white-space:nowrap;padding:8px 6px;text-align:right;border-top:1px solid var(--line);font-family:var(--font-mono)}
+.yt th:first-child,.yt td:first-child{text-align:left;padding-left:12px}
+.yt td:first-child{font-family:var(--font-body);font-weight:600}
+.yt small{display:block;font-weight:400;font-size:10.5px;color:var(--muted)}
+
+.ocard{display:flex;flex-direction:column;gap:3px;text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 14px}
+.ocard .t{font-weight:600;font-size:16px}
+.ocard .a{font-size:12.5px;color:var(--muted)}
+.ocard .f{font-family:var(--font-mono);font-size:12.5px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.mr{display:flex;flex-direction:column;gap:6px}.mrh,.mrr{display:grid;grid-template-columns:minmax(88px,1.7fr) repeat(12,minmax(0,1fr));gap:3px;align-items:center}
+.mrh span{font-size:10.5px;color:var(--muted);text-align:center;font-weight:600}.mrr{text-decoration:none;color:var(--ink);min-height:30px}
+.mrn{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;flex-direction:column;line-height:1.15}.mrn small{font-size:10.5px;color:var(--muted);font-weight:400;overflow:hidden;text-overflow:ellipsis}
+.mrr i{height:20px;border-radius:5px;display:block;background:var(--surface2)}
+.mc-good{background:color-mix(in srgb,var(--good) 55%,var(--surface))!important}.mc-mid{background:color-mix(in srgb,var(--mid) 55%,var(--surface))!important}.mc-bad{background:color-mix(in srgb,var(--bad) 65%,var(--surface))!important}.mc-none{background:var(--line)!important}.mc-plan{background:transparent!important;border:1.5px dashed var(--line)}.mc-x{background:transparent!important}
+.mrl{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--muted)}.mrl span{display:inline-flex;align-items:center;gap:5px}.mrl i{width:12px;height:12px;border-radius:3px;display:block}
+.fchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:6px 0 12px;padding:2px 0}.fchips::-webkit-scrollbar{display:none}
+.fchips button{flex:none;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;white-space:nowrap}
+.fchips button[aria-pressed="true"]{background:var(--c-hub);border-color:var(--c-hub);color:var(--on-color)}
+.ocard .th{display:flex;align-items:center;gap:8px;justify-content:space-between}.ocard .th .pills{display:flex;gap:4px;flex:none}
+.phrow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:0 0 12px}.phrow .fld{flex:1 1 180px;margin:0}
+.chip{font-size:11px;font-weight:600;border-radius:999px;padding:2px 9px;color:#fff;background:var(--cc,var(--accent))}
+.arow{padding:12px 14px;border-top:1px solid var(--line)} .arow:first-child{border-top:0}
+.arow .ah{display:flex;align-items:center;gap:10px;flex-wrap:wrap} .arow .ah b{flex:1;min-width:0}
+.arow .ai{display:inline-flex;flex:none}
+.dif{margin-top:8px;display:flex;flex-direction:column;gap:3px;font-size:12px}
+.dif div{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1fr) minmax(0,1fr);gap:6px;background:var(--surface2);border-radius:8px;padding:5px 8px;align-items:baseline}
+.dif div span:first-child{color:var(--muted)}
+.btn[href]{text-decoration:none}
+.sub3{margin:0 0 6px;font-size:15px;font-weight:600}
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 10px}
+.phb{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}.phh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:3px;margin:4px 0 10px}
+.seg button{border:0;background:none;border-radius:9px;padding:9px 2px;font-size:13.5px;font-weight:500;color:var(--muted);min-height:40px}
+.seg button[aria-selected="true"]{background:var(--surface);color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.g2 .fld{justify-content:flex-end}
+.g2 .fld input[type=date]{padding-left:8px;padding-right:6px;font-size:15px}
+.tile .s,.tile span.d{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile .big{font-size:18px}
+
+/* Druck und PDF (Berichte) */
+#printArea{display:none}
+@media print{body>*:not(#printArea){display:none!important}#printArea{display:block!important;color:#000;background:#fff}@page{size:A4;margin:16mm 14mm}
+.pr{font:10pt/1.4 -apple-system,"Helvetica Neue",Arial,sans-serif;color:#000}.pr h1{font-size:17pt;margin:0 0 2pt}.pr h2{font-size:12pt;margin:14pt 0 6pt}.pr h3{font-size:11pt;margin:0 0 5pt}
+.pr-sub{margin:0 0 10pt;color:#444}.pr-k{width:100%;border-collapse:collapse;margin:6pt 0}.pr-k td{border:1px solid #bbb;padding:5pt 6pt;font-size:8.5pt;color:#444;width:25%}.pr-k b{display:block;font-size:12pt;color:#000;margin-top:2pt}
+.pr-t{width:100%;border-collapse:collapse;margin:4pt 0 8pt}.pr-t th{text-align:left;font-size:8.5pt;border-bottom:1.5px solid #000;padding:3pt 4pt}.pr-t td{border-bottom:1px solid #ddd;padding:3pt 4pt;vertical-align:top}.pr-t td+td,.pr-t th+th{text-align:right;white-space:nowrap}
+.pr-docs td:nth-child(2),.pr-docs th:nth-child(2),.pr-docs td:nth-child(3),.pr-docs th:nth-child(3){text-align:left;white-space:normal}
+.pr-t tr.sum td{font-weight:700;border-top:1.5px solid #000;border-bottom:none}.pr-t small{display:block;color:#555;font-size:8pt}
+.pr-o{break-inside:avoid;page-break-inside:avoid;margin:0 0 10pt;padding:8pt 0 0;border-top:1px solid #999}.pr-kv{width:100%;border-collapse:collapse}.pr-kv td{padding:2pt 4pt;font-size:9pt}.pr-kv td:nth-child(odd){color:#555;width:22%}.pr-kv td:nth-child(even){width:28%}
+.pr-f{margin-top:12pt;font-size:8pt;color:#555}html,body{background:#fff!important}.pr h1,.pr h2,.pr h3{text-transform:none;letter-spacing:0;color:#000;font-weight:700}.pr h2{border:0}}
+</style>
+<link rel="stylesheet" href="../shared/ui.css">
+<script>window.IMMO_I18N=1;</script>
+<script src="../shared/i18n-en.js"></script>
+<script src="../shared/core.js"></script>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+'use strict';
+/* ---------- Grundlagen ---------- */
+const HUBKEY='immobilien-hub-v1';
+try{ localStorage.setItem('immo-hub-url-v1',location.href.split('#')[0].split('?')[0]); }catch(e){}
+const APPS=[
+  {id:'sc', name:'Schnellcheck', key:'immobilien-schnellcheck-v1', url:'../immo-schnellcheck/index.html', d:'Rendite, Cashflow und Ampel für ein Kaufobjekt.'},
+  {id:'bes',name:'Besichtigung', key:'besichtigung-v1', url:'../besichtigung/index.html', d:'Checkliste, Fotos und Fragen beim Termin.'},
+  {id:'cp', name:'Bestands-Cockpit', short:'Cockpit', key:'bestands-cockpit-v1', url:'../bestands-cockpit/index.html', d:'Portfolio, Finanzierung und Szenarien.'},
+  {id:'ver',name:'Vermietung', key:'vermietung-v1', url:'../vermietung/index.html', d:'Mieter, Staffel und Index, Eingang, Abrechnung.'},
+  {id:'nk',name:'Nebenkosten', key:'nebenkosten-v1', url:'../nebenkosten/index.html', d:'Abrechnung, Kaltmiete, Zähler, Belege, Anlage V.'},
+  {id:'pv',name:'PV und Wärmepumpe', short:'PV und WP', key:'pvwp-v1', url:'../pv-waermepumpe/index.html', d:'Solar, Speicher, Wärmepumpe, Förderung, Mieter.'},
+  {id:'ren',name:'Renovierung', key:'renovierung-v1', url:'../renovierung/index.html', d:'Gewerke, Angebote, 15-%-Grenze, Mieterhöhung.'},
+  {id:'flip',name:'Flip-Rechner', short:'Flip', key:'flip-v1', url:'../flip-rechner/index.html', d:'Kauf, Sanierung, Verkauf in 10 Jahren, Spekulationssteuer.'}
+];
+const GLYPH={"hub": "<rect x=\"14\" y=\"14\" width=\"15\" height=\"15\" rx=\"4\" fill=\"#fff\"/><rect x=\"35\" y=\"14\" width=\"15\" height=\"15\" rx=\"4\" fill=\"#fff\"/><rect x=\"14\" y=\"35\" width=\"15\" height=\"15\" rx=\"4\" fill=\"#fff\"/><rect x=\"35\" y=\"35\" width=\"15\" height=\"15\" rx=\"4\" fill=\"#fff\" opacity=\".55\"/>", "sc": "<path d=\"M13 43a19 19 0 0 1 38 0\" fill=\"none\" stroke=\"#fff\" stroke-width=\"5\" stroke-linecap=\"round\"/><path d=\"M32 43L42 29\" stroke=\"#fff\" stroke-width=\"5\" stroke-linecap=\"round\"/><circle cx=\"32\" cy=\"43\" r=\"4\" fill=\"#fff\"/>", "bes": "<path d=\"M12 31L32 14l20 17\" fill=\"none\" stroke=\"#fff\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M17 28v22h30V28\" fill=\"none\" stroke=\"#fff\" stroke-width=\"5\" stroke-linejoin=\"round\"/><path d=\"M25 38l5 5 10-11\" fill=\"none\" stroke=\"#fff\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "cp": "<rect x=\"13\" y=\"38\" width=\"9\" height=\"13\" rx=\"2\" fill=\"#fff\"/><rect x=\"27.5\" y=\"29\" width=\"9\" height=\"22\" rx=\"2\" fill=\"#fff\"/><rect x=\"42\" y=\"19\" width=\"9\" height=\"32\" rx=\"2\" fill=\"#fff\"/><path d=\"M14 27l15-9 10 5 12-11\" fill=\"none\" stroke=\"#fff\" stroke-opacity=\".6\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "ver": "<circle cx=\"23\" cy=\"32\" r=\"10\" fill=\"none\" stroke=\"#fff\" stroke-width=\"5\"/><path d=\"M33 32h20M46 32v9M53 32v6\" fill=\"none\" stroke=\"#fff\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>", "pv": "<circle cx=\"15\" cy=\"15\" r=\"5.5\" fill=\"#fff\"/><g stroke=\"#fff\" stroke-width=\"3.2\" stroke-linecap=\"round\"><path d=\"M15 5v2.5M5 15h2.5M8 8l1.8 1.8M22 8l-1.8 1.8\"/></g><path d=\"M26 11h28l-5 20H21z\" fill=\"#fff\"/><g stroke=\"#B45309\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M33.5 11l-4 20M43.5 11l-3.5 20M23.7 21h28.3\"/></g><g fill=\"none\" stroke=\"#fff\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 39c-3 3 3 5 0 8s3 5 0 8\"/><path d=\"M32 39c-3 3 3 5 0 8s3 5 0 8\"/><path d=\"M46 39c-3 3 3 5 0 8s3 5 0 8\"/></g>", "ren": "<rect x=\"10\" y=\"12\" width=\"34\" height=\"14\" rx=\"3.5\" fill=\"#fff\"/><path d=\"M44 19h8v14H33v7\" fill=\"none\" stroke=\"#fff\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><rect x=\"28\" y=\"40\" width=\"10\" height=\"14\" rx=\"3\" fill=\"#fff\"/>", "nk": "<path d=\"M16 12h26l8 8v32H16z\" fill=\"none\" stroke=\"#fff\" stroke-width=\"5\" stroke-linejoin=\"round\"/><path d=\"M24 32h16M24 42h16\" stroke=\"#fff\" stroke-width=\"4.5\" stroke-linecap=\"round\"/>", "flip": "<path d=\"M32 11L9 31h7.5v21h31V31H55z\" fill=\"#fff\"/><path d=\"M32 46V32M25 38.5l7-7 7 7\" fill=\"none\" stroke=\"#9C3D54\" stroke-width=\"4.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>"};
+const COLS={"hub": "#2A3441", "sc": "#2B4C9B", "bes": "#0E6B73", "cp": "#2E7D4F", "ver": "#5B3F8C", "pv": "#B45309", "ren": "#A63D2F", "flip": "#9C3D54", "nk": "#0F6E5A"};
+const ICKEY={sc:'sc',bes:'bes',cp:'cp',ver:'ver',pv:'pv',ren:'ren',flip:'flip'};
+function icon(k,sz){ return `<svg width="${sz}" height="${sz}" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ig${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#000" stop-opacity=".14"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="${COLS[k]}"/><rect width="64" height="64" rx="15" fill="url(#ig${k})"/>${GLYPH[k]}</svg>`; }
+const SUMKEY='vermietung-summary-v1';
+const $=s=>document.querySelector(s);
+const {esc,nf,toast,kpi}=ImmoCore;
+const eur=v=>nf(Math.round(v),0)+' €', eur2=v=>nf(v,2)+' €';
+const r2=v=>Math.round(v*100)/100;
+const fmtD=d=>d&&d.length>=10?ImmoCore.fmtDate(d.slice(0,10)):'';
+const rd=k=>{ try{ const r=localStorage.getItem(k); return r?JSON.parse(r):null; }catch(e){ return null; } };
+const rawSize=k=>{ try{ const r=localStorage.getItem(k); return r?r.length:0; }catch(e){ return 0; } };
+let hub={v:1,urls:{},map:{},meta:{},notify:{on:false,rent:true},lastBackup:0};
+try{ const h=JSON.parse(localStorage.getItem(HUBKEY)||'null'); if(h&&h.v===1) hub=Object.assign(hub,h); }catch(e){}
+const saveHub=()=>{ try{ localStorage.setItem(HUBKEY,JSON.stringify(hub)); }catch(e){ toast('Speichern nicht möglich.'); } };
+const urlOf=a=>(location.protocol==='app:'?null:hub.urls[a.id])||a.url;
+let tab='home', toastT=null, armed=null;
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+
+function twice(k){ if(armed===k){ armed=null; return true; } armed=k; toast('Zum Bestätigen nochmal tippen.'); setTimeout(()=>{ if(armed===k) armed=null; },3500); return false; }
+
+/* ---------- Daten der Apps ---------- */
+function data(){
+  const sum=rd(SUMKEY), cp=rd('bestands-cockpit-v1'), bes=rd('besichtigung-v1'), sc=rd('immobilien-schnellcheck-v1'), ver=rd('vermietung-v1');
+  /* Rückstand immer frisch aus den Mietdaten rechnen. Die Kurzfassung der Vermietung ist sonst nach einem Monatswechsel veraltet, bis die App wieder geöffnet wird. */
+  if(sum&&ver&&Array.isArray(ver.tens)){ try{ const a=r2(ver.tens.reduce((x,t)=>x+Math.max(0,saldoV(ver,t)),0)); if(Math.abs(a-(sum.arrears||0))>0.004){ sum.arrears=a; localStorage.setItem(SUMKEY,JSON.stringify(sum)); } }catch(e){} }
+  return {sum,cp,bes,sc,ver};
+}
+
+function figure(a,D){
+  try{
+  if(a.id==='ver'&&D.sum){ const k=D.sum.mieten.reduce((x,m)=>x+m.kalt+m.stell,0); return [eur(k),D.sum.arrears>0.5?'Rückstand '+eur(D.sum.arrears):'Kaltmiete im Monat, kein Rückstand',k]; }
+  if(a.id==='cp'&&D.cp&&Array.isArray(D.cp.objs)&&!D.cp.example){ const l=D.cp.objs.reduce((x,o)=>x+(+o.loan||0),0); return [D.cp.objs.length+(D.cp.objs.length===1?' Objekt':' Objekte'),'Darlehen '+eur(l),l]; }
+  if(a.id==='bes'&&D.bes&&Array.isArray(D.bes.objs)&&D.bes.objs.length){ const up=D.bes.objs.filter(o=>o.termin&&new Date(o.termin).getTime()>=Date.now()).sort((x,y)=>new Date(x.termin)-new Date(y.termin)); return [D.bes.objs.length+' erfasst',up.length?'Nächster Termin '+new Date(up[0].termin).toLocaleDateString(ImmoCore.loc,{day:'2-digit',month:'2-digit'}):'kein Termin geplant']; }
+  if(a.id==='sc'&&D.sc&&+D.sc.kp>0) return [eur(+D.sc.kp),'Kaufpreis des letzten Checks'];
+  if(a.id==='pv'){ const j=rd('pvwp-summary-v1'); if(j&&j.irr!==null&&j.irr!==undefined) return [nf(j.irr*100,1)+' %','Rendite PV und WP, Einsatz '+eur(j.inv),j.irr*100]; }
+  if(a.id==='flip'){ const j=rd('flip-summary-v1'); if(j&&isFinite(j.gewinn)) return [(j.gewinn>=0?'+':'−')+eur(Math.abs(j.gewinn)),'Gewinn nach Steuer'+(j.pa!==null&&j.pa!==undefined?', '+nf(j.pa*100,0)+' % p. a.':''),j.gewinn]; }
+  if(a.id==='ren'){ const j=rd('renovierung-summary-v1'); if(j&&j.n>0) return [eur(j.total),j.n+(j.n===1?' Projekt':' Projekte')+' in Planung',j.total]; }
+  }catch(e){}
+  return null;
+}
+
+/* ---------- Verlauf (Sparklines) ---------- */
+const HK='hub-hist-v1';
+function histLoad(){ try{ const j=JSON.parse(localStorage.getItem(HK)); return j&&typeof j==='object'?j:{}; }catch(e){ return {}; } }
+function histNote(id,v){
+  if(typeof v!=='number'||!isFinite(v)) return [];
+  const H=histLoad(), day=ImmoCore.today(), a=Array.isArray(H[id])?H[id]:[];
+  if(a.length&&a[a.length-1][0]===day) a[a.length-1][1]=v; else a.push([day,v]);
+  H[id]=a.slice(-30); try{ localStorage.setItem(HK,JSON.stringify(H)); }catch(e){}
+  return H[id];
+}
+function spark(a){
+  if(a.length<2) return '';
+  const W=120,Hh=26,vs=a.map(x=>x[1]), mn=Math.min(...vs), mx=Math.max(...vs), r=(mx-mn)||1;
+  const X=i=>3+(W-6)*i/(a.length-1), Y=v=>Hh-4-(Hh-8)*(v-mn)/r;
+  const pts=a.map((x,i)=>X(i).toFixed(1)+','+Y(x[1]).toFixed(1)).join(' ');
+  const d=vs[vs.length-1]-vs[0], word=d>0?'gestiegen':d<0?'gesunken':'unverändert';
+  return `<svg class="spark" viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Verlauf über ${a.length} Messpunkte, ${word}"><polyline points="${pts}" fill="none" stroke="var(--tc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${X(a.length-1).toFixed(1)}" cy="${Y(vs[vs.length-1]).toFixed(1)}" r="3.2" fill="var(--tc)" stroke="var(--surface)" stroke-width="1.5"/></svg>`;
+}
+function found(a){ return a.key?rawSize(a.key)>0:null; }
+
+/* ---------- Ansichten ---------- */
+function bkStat(){
+  const any=APPS.some(a=>a.key&&rawSize(a.key));
+  if(!any&&!hub.lastBackup) return '';
+  if(!hub.lastBackup) return {cls:'p-bad',t:'Noch kein Backup'};
+  const d=Math.max(0,Math.floor((Date.now()-hub.lastBackup)/864e5));
+  return {cls:d>30?'p-bad':d>14?'p-mid':'p-good',t:d===0?'Backup von heute':d===1?'Backup vor 1 Tag':'Backup vor '+d+' Tagen'};
+}
+function bar(sub,title){ const b0=bkStat(), b=(tab==='home'&&b0&&b0.cls!=='p-good')?b0:null;
+  const st=b?`<button type="button" class="bstat" data-act="tab" data-v="set" aria-label="${esc(b.t)}, zu den Einstellungen"><span class="pill ${b.cls}">${esc(b.t)}</span>${b.cls==='p-good'?'':'<span>Jetzt sichern</span>'}<u>Backup</u></button>`:'';
+  return `<div class="bar"><span class="sub">${esc(sub)}</span><h1>${esc(title)}</h1>${st}</div>`; }
+const TABI={
+home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
+obj:'<path d="M4 21V5l8-3 8 3v16"/><path d="M9 21v-5h6v5M8 9h2M14 9h2M8 13h2M14 13h2"/>',
+fin:'<path d="M3 21h18"/><path d="M5 21V10M10 21V6M15 21v-8M20 21V3"/>',
+miete:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9v.01M18 15v.01"/>',
+set:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'};
+function tabbar(){ const t=[['home','Übersicht'],['obj','Objekte'],['fin','Finanzen'],['miete','Mieten'],['set','Mehr']]; return `<nav class="tabbar" aria-label="Bereiche">${t.map(([i,l])=>`<button data-act="tab" data-v="${i}" ${tab===i?'aria-current="page"':''}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TABI[i]}</svg><span>${l}</span></button>`).join('')}</nav>`; }
+
+
+/* ---------- Kalender-Export ---------- */
+function icsItems(){
+  const td=ImmoCore.today(), items=[], sum=rd(SUMKEY), cp=rd('bestands-cockpit-v1');
+  if(sum&&Array.isArray(sum.dlAll)) sum.dlAll.forEach(d=>{ if(d.date<td||d.kind==='pay') return; items.push({uid:'ver-'+d.kind+'-'+d.tid+'-'+(d.kind==='index'||d.kind==='fest'?'pruef':d.date)+(d.kind==='staffel'?'-st':''),date:d.date,t:d.t,sub:d.sub,warn:d.kind==='abr'?30:(d.kind==='ende'||d.kind==='kaution'?14:7)}); });
+  if(cp&&Array.isArray(cp.objs)&&!cp.example){ const list=cp.objs.map(o=>{ const m=hObjs().find(x=>x.links&&String(x.links.cp)===String(o.id)); return {o:m?Object.assign({},o,{fin2:m.fin2||[]}):o,start:(m&&m.rate1)||(reMeta()[String(o.id)]||{}).kauf||''}; }); ImmoCore.finItems(list,td,eur).forEach(i=>items.push(i)); }
+  { const have=new Set(cp&&Array.isArray(cp.objs)&&!cp.example?cp.objs.map(o=>String(o.id)):[]);
+    const lone=hObjs().filter(m=>!(m.links&&m.links.cp&&have.has(String(m.links.cp)))&&(+m.loan>0||+m.rest>0)).map(m=>({o:{id:'h'+m.id,name:m.name,loan:m.loan,ratebk:m.ratebk,fin2:m.fin2,zins:m.zins,tilg:m.tilg,fix:m.fix,fixEnd:m.fixEnd,sonder:m.sonder},start:m.rate1||''}));
+    ImmoCore.finItems(lone,td,eur).forEach(i=>items.push(i)); }
+  if(window.PX) PX.recurIcs().filter(i=>i.date>=td).forEach(i=>items.push(i));
+  return items.sort((a,b)=>a.date<b.date?-1:(a.date>b.date?1:0));
+}
+/* Gemeinsame Grundlage für Kernzahlen-Karte und Portfolio: Bestand = „Halten“ oder „Verbessern“, Miete laut Vermietung */
+function bestandRows(S){ return hObjs().filter(m=>owned(m,S)).map(m=>{ const cb=ImmoCore.currentBalance(m), ph=phaseOf(m,S).i, g=verAgg(m), inB=ph>=3, held=inB&&g&&g.n>0;
+  return {m,cb,inB,held,r:held?g.k:0,p:cb?cb.pay:0,debt:cb?cb.now:0,val:+m.mw||+m.kp||0,bk:!!(cb&&cb.fromBank)}; }); }
+function portfolioCard(S){
+  const O=hObjs(); if(!O.length) return '';
+  const B=bestandRows(S), inB=B.filter(x=>x.inB), held=B.filter(x=>x.held), kauf=B.filter(x=>!x.inB);
+  const rest=inB.reduce((a,x)=>a+x.debt,0), val=inB.reduce((a,x)=>a+x.val,0), pay=held.reduce((a,x)=>a+x.p,0), rent=held.reduce((a,x)=>a+x.r,0), nT=held.length;
+  const rows=O.map(m=>{ const x=B.find(y=>y.m===m), cb=ImmoCore.currentBalance(m), kp=+m.kp||0, mi=x&&x.held?x.r:(+m.kalt||0); return {m,x,rest:cb?cb.now:null,pay:cb?cb.pay:null,nodate:!!(cb&&cb.mode==='none'),kp,rend:kp>0&&mi>0?mi*12/kp:null}; });
+  if(!rows.some(r=>r.rest!=null||r.kp>0)) return '';
+  let h='<h2>Portfolio</h2><div class="kpis">';
+  h+=kpi('Restschuld im Bestand',inB.length?eur(rest):'–',inB.length?(val>0?'Beleihung '+nf(rest/val*100,0)+' %':inB.length+' Objekte'):'Noch kein Objekt im Bestand');
+  h+=kpi('Raten pro Monat',held.length?eur(pay):'–',held.length?eur(pay*12)+' pro Jahr'+(held.every(x=>x.bk||!x.cb)?'':', teils berechnet'):'');
+  h+=kpi('Kaltmiete pro Monat',held.length?eur(rent):'–',held.length?'laut Vermietung, mit Stellplatz':'Noch keine Mieter');
+  if(window.PX){ const c=PX.cfSum(inB.map(x=>x.m)); h+=kpi('Ist-Cashflow 12 Monate',c.n?(c.cf>=0?'+':'−')+eur(Math.abs(c.cf)):'–',c.n?'Ø '+(c.cf>=0?'+':'−')+eur(Math.abs(c.cf/12))+' pro Monat, nach Belegen':'Noch keine Daten',c.cf>=0?'t-good':'t-bad'); }
+  h+='</div>';
+  h+=`<p class="note" style="margin:6px 4px 0">Kaufpreise gesamt ${eur(rows.reduce((a,r)=>a+r.kp,0))} · ${O.length} Objekt${O.length===1?'':'e'}</p>`;
+  if(kauf.length) h+=`<p class="note" style="margin:8px 4px 0">Noch nicht eingerechnet, weil im Kauf: ${kauf.map(x=>esc(x.m.name||'Objekt')+(x.p?' (Rate '+eur(x.p)+')':'')).join(', ')}.</p>`;
+  const rk=rows.slice().sort((a,b)=>(b.rend==null?-1:b.rend)-(a.rend==null?-1:a.rend));
+  h+='<div class="card" style="margin-top:10px">'+rk.map((r,i)=>`<div class="kv"><div>${i+1}. ${esc(r.m.name||'Objekt')}<small>${r.rend!=null?'Rendite '+nf(r.rend*100,1)+' %':'Rendite offen'}${r.pay!=null?' · Rate '+eur(r.pay):''}${r.x&&!r.x.inB?' · im Kauf':''}${r.nodate?' · Datum der ersten Rate fehlt':''}</small></div><b>${r.rest!=null?eur(r.rest):'–'}</b></div>`).join('')+'</div><p class="note">Nach Bruttorendite sortiert (vermietete Objekte mit der Ist-Miete), rechts die Restschuld heute. „Miete − Rate“ und ihre Aufschlüsselung stehen oben in der Kernzahlen-Karte.</p>';
+  return h;
+}
+/* Ankauf-Stand und anstehende Besichtigungen (Layout Phase 4) */
+function ankaufCard(D,noBes){ const O=hObjs().filter(m=>!m.archived); if(!O.length) return ''; const S=ImmoCore.sums();
+  const A=O.filter(m=>stageOf(m,S).grp.includes('ankauf')); let h='';
+  const now=Date.now(), soon=now+14*864e5, up=(D.bes&&Array.isArray(D.bes.objs)?D.bes.objs:[]).filter(o=>o.termin&&new Date(o.termin).getTime()>=now-36e5&&new Date(o.termin).getTime()<=soon).sort((a,b)=>new Date(a.termin)-new Date(b.termin));
+  if(up.length&&!noBes){ const bu=urlOf(appDef('bes')); h+='<h2>Besichtigungen</h2><div class="ui-card">'+up.map(o=>{ const d=new Date(o.termin); return `<a class="ui-task" href="${esc(bu+'#/o/'+o.id+'/daten')}"><span class="ic" style="background:var(--c-bes)">${d.getDate()}</span><span><span class="t" translate="no">${esc(o.titel||o.adresse||'Besichtigung')}</span><br><span class="s">${esc(d.toLocaleString(ImmoCore.loc,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))}</span></span></a>`; }).join('')+'</div>'; }
+  if(A.length){ const c={}; A.forEach(m=>{ const t=stageOf(m,S).p[0][0]; c[t]=(c[t]||0)+1; });
+    h+=`<h2>Ankauf</h2><button type="button" class="ui-kpi" data-act="objFilter" data-v="ankauf" style="width:100%;text-align:left;font:inherit;color:inherit"><span class="l">Im Ankauf</span><span class="v">${A.length} ${A.length===1?'Objekt':'Objekte'}</span><span class="s">${Object.entries(c).map(([t,n])=>n+' <span>'+t+'</span>').join(' · ')} · <span>Liste öffnen ›</span></span></button>`; }
+  return h; }
+function viewHome(){
+  const D=data(), S=ImmoCore.sums(); let h=bar(todayLong(),'Übersicht')+'<main>';
+  const anyData=APPS.some(a=>found(a))||hObjs().length;
+  if(!anyData) h+=(window.PX?PX.welcome():`<div class="ui-empty" style="margin-top:12px"><b>Willkommen im Hub</b>Leg dein erstes Objekt an oder prüfe ein Inserat. Hast du schon ein Backup, spielst du es unter „Mehr“ ein.<span class="row-actions" style="margin:0"><button class="btn primary" data-act="objNew">Objekt anlegen</button><button class="btn" data-act="sheet" data-v="inserat">Inserat prüfen</button></span></div>`);
+  h+=`<div class="ui-field" style="margin:10px 0 4px"><input type="search" id="hsearch" placeholder="Objekte, Mieter, Belege …" aria-label="Suchen" autocomplete="off" autocorrect="off" value="${esc(searchQ)}"></div><div id="hsres">${searchQ.length>=2?searchHtml(searchQ):''}</div>`;
+  h+=heroCard(D,S);
+  const T=todayRows(D,S);
+  h+='<h2>Heute</h2>'+(T.length?'<div class="ui-card ui-today">'+T.slice(0,8).map(rowHtml).join('')+(T.length>8?`<p class="note" style="margin:6px 0 0">${T.length-8} weitere unter Mieten und in den Objekten.</p>`:'')+'</div>':'<div class="ui-empty"><b>Heute ist nichts offen</b>Mieten, Fristen, Termine und Aufgaben erscheinen hier, sobald sie anstehen.</div>');
+  if(window.PX&&anyData) h+=PX.fristCard();
+  { const n=icsItems().length; if(n) h+=`<div class="row-actions">${NATIVE_N()&&!ntf().on?'<button class="btn" data-act="tab" data-v="set">Erinnerungen einschalten</button>':''}<button class="btn" data-act="ics">Fristen in den Kalender (${n})</button></div>`; }
+  h+=carousel(S);
+  h+=ankaufCard(D,true);
+  h+=portfolioCard(S);
+  const s0=D.sum; let kpS='';
+  if(s0){ const kalt=s0.mieten.reduce((a,m)=>a+m.kalt+m.stell,0);
+    kpS+=kpi('Kaltmiete im Monat (Ist)',eur(kalt),s0.mieten.length+' vermietete Wohnung'+(s0.mieten.length===1?'':'en'));
+    kpS+=kpi('Offene Mietrückstände',eur(s0.arrears),'Stand '+new Date(s0.ts).toLocaleDateString(ImmoCore.loc),s0.arrears>0.5?'t-bad':'t-good'); }
+  if(kpS) h+='<h2>Auf einen Blick</h2><div class="kpis">'+kpS+'</div>';
+  h+='<h2>Apps</h2><div class="tiles">'+APPS.map(a=>{ const fg=figure(a,D), f=found(a); const v=fg?`<div class="big">${esc(fg[0])}</div><div class="s">${esc(fg[1])}</div>${spark(histNote(a.id,fg[2]))}`:`<div class="s">${esc(a.d)}</div><span class="pill ${f===null?'p-none':'p-none'}">${f===null?'ohne Speicher':'noch leer'}</span>`; return `<a class="tile" href="${esc(urlOf(a))}" style="--tc:${COLS[a.id]}"><span class="ic">${icon(a.id,38)}</span><b>${a.short||a.name}</b>${v}</a>`; }).join('')+'</div>';
+  h+='</main>';
+  pushWidget(D,S,T);
+  return h+tabbar();
+}
+
+function curCp(){ const c=rd('bestands-cockpit-v1'); return c&&Array.isArray(c.objs)?c:null; }
+function suggest(m,cp){ const n=(m.name||'').trim().toLowerCase(); if(!n||!cp) return ''; const o=cp.objs.find(x=>String(x.name||'').trim().toLowerCase()===n); return o?String(o.id):''; }
+/* Mieteingang aller Mieter als Monatsraster, Fristen darunter (Layout Phase 5). Die Vermietung liefert die Daten. */
+let mietYear=0;
+function mietRaster(s){
+  const vu=urlOf(appDef('ver')); let h='';
+  if(s.sollM!==undefined){ const off=Math.max(0,r2(s.sollM-s.istM));
+    h+='<div class="ui-kpis" style="margin-top:6px">'
+      +`<div class="ui-kpi"><span class="l">Soll ${esc(fmtYm(s.ym))}</span><span class="v">${eur2(s.sollM)}</span><span class="s">Kaltmiete, Nebenkosten, Stellplatz</span></div>`
+      +`<div class="ui-kpi"><span class="l">Offen gesamt</span><span class="v"${s.arrears>0.5?' style="color:var(--bad)"':''}>${eur2(s.arrears)}</span><span class="s">${off>0.5?eur2(off)+' im laufenden Monat':'laufender Monat bezahlt'}</span></div></div>`; }
+  const R=s.raster||{}, ys=Object.keys(R).map(Number).sort();
+  if(ys.length){ if(!ys.includes(mietYear)) mietYear=ys[ys.length-1]; const rows=R[mietYear]||[];
+    const MS=ImmoCore.lang==='en'?'JFMAMJJASOND':'JFMAMJJASOND';
+    h+=`<h2>Mieteingang</h2><div class="ui-card"><div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="ui-label">Jahr</span><span class="ui-seg" style="flex:none">${ys.map(y=>`<button type="button" data-act="mietYear" data-v="${y}" ${y===mietYear?'aria-current="true"':''} style="padding:0 14px">${y}</button>`).join('')}</span></div>`;
+    if(!rows.length) h+='<p class="note" style="margin:0">In diesem Jahr gab es kein Mietverhältnis.</p>';
+    else h+='<div class="mr"><div class="mrh"><span></span>'+MS.split('').map(c=>`<span>${c}</span>`).join('')+'</div>'+rows.map(r=>`<a class="mrr" href="${esc(vu+'#/t/'+r.tid)}"><span class="mrn" translate="no">${esc(r.m||r.n)}<small>${esc(r.m?r.n:'')}</small></span>${r.c.map((c,i)=>`<i class="mc-${c||'x'}" title="${esc(fmtYm(mietYear+'-'+String(i+1).padStart(2,'0')))}"></i>`).join('')}</a>`).join('')+'</div>'
+      +'<div class="mrl"><span><i class="mc-good"></i>bezahlt</span><span><i class="mc-mid"></i>teilweise</span><span><i class="mc-bad"></i>überfällig</span><span><i class="mc-none"></i>offen</span><span><i class="mc-plan"></i>geplant</span></div>';
+    h+=`</div><div class="row-actions"><a class="btn primary" style="--accent:var(--c-ver)" href="${esc(vu+'#/miete')}">Zahlung erfassen</a></div>`; }
+  if(s.dl&&s.dl.length) h+='<h2>Fristen</h2><div class="card">'+s.dl.map(d=>`<div class="li ${d.state}"><div><div class="a">${esc(d.t)}</div><div class="b">${esc(d.sub||'')}</div></div><div class="when ${d.state==='over'?'t-bad':'t-mid'}">${fmtD(d.date)}</div></div>`).join('')+'</div>';
+  return h; }
+function viewMiete(){
+  const D=data(), s=D.sum, cp=curCp(); let h=bar('Vermietung','Mieten')+'<main>';
+  if(!s){ return h+`<div class="empty"><b>Keine Mieterdaten gefunden</b>Öffne die Vermietungs-App, trage Wohnungen mit Mieter ein und schließe sie wieder. Dann erscheinen die aktuellen Mieten hier.</div></main>`+tabbar(); }
+  h+=mietRaster(s); if(window.PX) h+=PX.mieteBtn();
+  if(!s.mieten.length) return h+`<div class="empty"><b>Keine aktive Vermietung</b>In der Vermietungs-App läuft aktuell kein Mietverhältnis.</div></main>`+tabbar();
+  h+='<h2>Abgleich mit dem Cockpit</h2>';
+  if(!cp) h+='<div class="warn">Im Bestands-Cockpit sind noch keine Objekte gespeichert. Du siehst die Mieten, kannst sie aber noch nicht zuordnen.</div>';
+  else if(cp.example) h+='<div class="warn">Das Cockpit zeigt noch seine Beispieldaten. Lege dort erst deine echten Objekte an, bevor du Mieten übernimmst.</div>';
+  h+='<p class="note" style="margin-top:0">Die Miete in der Vermietungs-App ist der Ist-Wert. Ordne jede Wohnung einem Objekt zu. Beim Übernehmen bekommt das Cockpit Kaltmiete und Stellplatz getrennt, mehrere Wohnungen eines Objekts werden addiert. Die Kaltmiete geht auch ins Hub-Objekt.</p><div class="cards">';
+  let diffs=0;
+  s.mieten.forEach(m=>{
+    const key=String(m.oid); if(hub.map[key]===undefined){ const sg=suggest(m,cp); if(sg) { hub.map[key]=sg; saveHub(); } }
+    const sel=hub.map[key]||'', co=cp&&sel?cp.objs.find(x=>String(x.id)===sel):null, ag=sel?rentAgg(s,sel):{kalt:m.kalt,stell:m.stell,n:1}, ist=ag.kalt+ag.stell, plan=co?(+co.rent||0)+(+co.garage||0):0;
+    let st='';
+    if(co){ const d=r2(ist-plan); st=Math.abs(d)<0.5?'<span class="pill p-good">Stimmt überein</span>':'<span class="pill p-mid">Weicht um '+(d>0?'+':'−')+eur2(Math.abs(d))+' ab</span>'; if(Math.abs(d)>=0.5) diffs++; }
+    h+=`<div class="mcard"><div class="t">${esc(m.name||'Wohnung')}</div><div class="a">${esc(m.mieter||'')}${m.qm?' · '+nf(m.qm,0)+' m²':''}</div>
+    <div class="cmp"><div>Ist laut Vermietung${ag.n>1?'<small>'+ag.n+' Wohnungen zusammen</small>':''}<b>${eur2(ist)}</b></div><div>Plan im Cockpit<b>${co?eur2(plan):'–'}</b></div></div>
+    <label class="fld">Objekt im Cockpit<select data-map="${esc(key)}"><option value="">– nicht zugeordnet –</option>${cp?cp.objs.map(o=>`<option value="${o.id}" ${String(o.id)===sel?'selected':''}>${esc(o.name||'Objekt')}</option>`).join(''):''}</select></label>
+    <div class="row-actions" style="margin:6px 0 0">${st}${co&&!cp.example?`<button class="btn small primary" data-act="takeRent" data-id="${esc(key)}">Miete übernehmen</button>`:''}</div></div>`;
+  });
+  h+='</div>';
+  if(cp&&!cp.example&&diffs>1) h+='<div class="row-actions"><button class="btn primary" data-act="takeAll">Alle abweichenden Mieten übernehmen</button></div>';
+  if(cp){ const used=new Set(Object.values(hub.map)); const free=cp.objs.filter(o=>!used.has(String(o.id)));
+    if(free.length&&!cp.example) h+='<h2>Cockpit-Objekte ohne Mieter</h2><div class="card">'+free.map(o=>`<div class="kv"><div>${esc(o.name||'Objekt')}<small>Plan ${eur(+o.rent||0)} / Monat, nicht zugeordnet</small></div></div>`).join('')+'</div><p class="note">Das sind Objekte, die noch keiner Wohnung aus der Vermietung zugeordnet sind, zum Beispiel Leerstand oder nicht erfasste Wohnungen.</p>'; }
+  h+='<p class="note">Nach der Übernahme das Cockpit neu öffnen. Wenn es parallel in einem anderen Fenster offen war, kann es die Änderung beim nächsten Speichern überschreiben.</p></main>';
+  return h+tabbar();
+}
+/* Summe aller Wohnungen, die einem Cockpit-Objekt zugeordnet sind */
+function rentAgg(s,sel){ return s.mieten.filter(x=>hub.map[String(x.oid)]===sel).reduce((a,x)=>({kalt:a.kalt+x.kalt,stell:a.stell+x.stell,n:a.n+1}),{kalt:0,stell:0,n:0}); }
+/* Miete ins Cockpit (Kaltmiete und Stellplatz getrennt) und ins verknüpfte Hub-Objekt (Kaltmiete) übernehmen */
+function applyRent(cp,s,sel){ const o=cp.objs.find(x=>String(x.id)===sel); if(!o) return null; const a=rentAgg(s,sel);
+  o.rent=r2(a.kalt); o.garage=r2(a.stell);
+  const m=hObjs().find(x=>x.links&&String(x.links.cp)===sel); if(m){ m.kalt=r2(a.kalt); saveHub(); }
+  return o; }
+function takeRent(key){
+  const s=data().sum, cp=curCp(); if(!s||!cp) return false;
+  const sel=hub.map[key]; if(!sel) return false;
+  const o=applyRent(cp,s,sel); return o?{cp,name:o.name}:false;
+}
+function writeCp(cp){ try{ localStorage.setItem('bestands-cockpit-v1',JSON.stringify(cp)); return true; }catch(e){ toast('Schreiben nicht möglich.'); return false; } }
+
+function lastBackupInfo(){
+  if(!hub.lastBackup) return {cls:'p-bad',t:'Noch kein Gesamt-Backup erstellt'};
+  const days=Math.floor((Date.now()-hub.lastBackup)/864e5);
+  return {cls:days>30?'p-mid':'p-good',t:'Letztes Backup: '+new Date(hub.lastBackup).toLocaleDateString(ImmoCore.loc)+(days>30?' (über 30 Tage her)':'')};
+}
+let bkText='', restoreText='', restoreFile=null;
+function langCard(){ const p=ImmoCore.langPref(); return `<h2>Sprache</h2><div class="card pad"><label class="fld">Sprache der Oberfläche<select data-lang="1"><option value="" ${p===''?'selected':''}>Automatisch (iPhone-Sprache)</option><option value="de" ${p==='de'?'selected':''}>Deutsch</option><option value="en" ${p==='en'?'selected':''}>English</option></select></label><p class="note" style="margin:0">Gilt für alle Apps. Datum und Zahlen folgen der Sprache.</p></div>`; }
+function viewSich(){
+  let h=bar('Einstellungen und Daten','Mehr')+'<main>'; const lb=lastBackupInfo(); h+=langCard(); if(window.PX) h+=PX.demoCard(); h+=lockCard(); h+=ntfCard();
+  const abh=abCard();
+  h+=`<h2>Backup</h2><div class="card pad"><p style="margin:0 0 8px">Ein Backup enthält die Daten aller Apps: ${APPS.filter(a=>a.key).map(a=>a.name).join(', ')}. Die Fotos der Besichtigung stecken in der Backup-Datei und im automatischen Backup, nicht im kopierten Text.</p><span class="pill ${lb.cls}">${lb.t}</span>
+  ${abh?`<div style="margin-top:14px">${abh}</div><hr style="border:0;border-top:1px solid var(--line);margin:14px 0">`:''}
+  <h3 class="sub3">${abh?'Zusätzlich von Hand':'Von Hand'}</h3><p class="note" style="margin:0 0 8px">Erstellt dasselbe Backup als Text oder Datei, zum Beispiel zum Teilen oder für ein anderes Gerät.</p>
+  <div class="row-actions"><button class="btn ${abh?'':'primary'}" data-act="mkbk">Backup erstellen</button></div>
+  ${bkText?`<textarea class="code" id="bk" readonly aria-label="Backup-Text">${esc(bkText)}</textarea><div class="row-actions"><button class="btn" data-act="cpbk">Text kopieren (ohne Fotos)</button><button class="btn primary" data-act="dlbk">Als Datei sichern${bkPhotos?' (mit '+bkPhotos+(bkPhotos===1?' Foto)':' Fotos)'):''}</button></div>`:''}</div>`;
+  h+=`<h2>Wiederherstellen</h2><div class="card pad"><p style="margin:0 0 10px">Füge den Backup-Text ein oder wähle die Datei. Vorhandene Daten der enthaltenen Apps werden dabei ersetzt. Enthält die Datei Fotos, ersetzen sie alle Fotos der Besichtigung.</p>
+  ${restoreFile?`<p class="pill p-good" style="margin:0 0 8px;display:inline-block">Datei geladen: ${esc(restoreFile.name)} (${(restoreFile.text.length/1048576).toLocaleString(ImmoCore.loc,{maximumFractionDigits:1})} MB)</p>`:`<textarea class="code" id="rs" placeholder="Backup-Text hier einfügen" aria-label="Backup-Text zum Wiederherstellen">${esc(restoreText)}</textarea>`}
+  <div class="row-actions"><input type="file" id="rsf" accept=".json,.txt,application/json,text/plain" style="max-width:100%"><button class="btn danger" data-act="restore">Wiederherstellen</button></div></div>`;
+  if(!ImmoCore.native){ const inst=ImmoCore.standalone(), can=ImmoCore.canInstall(), ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
+    h+=`<h2>Als App installieren</h2><div class="card pad" id="instCard">${inst?`<p style="margin:0">ImmoHub läuft bereits als App. Sie startet auch ohne Internet.</p>`:can?`<p style="margin:0 0 10px">Lege ImmoHub auf den Startbildschirm. Die App startet dann wie eine normale App und funktioniert auch offline.</p><button class="btn primary" data-act="install">Jetzt installieren</button>`:`<p style="margin:0 0 8px">So legst du ImmoHub auf den Startbildschirm. Danach startet sie wie eine normale App, auch offline.</p><ul style="margin:0;padding-left:20px;line-height:1.55">${ios?'':'<li><b>Android (Chrome):</b> Menü ⋮ oben rechts → „App installieren“ oder „Zum Startbildschirm hinzufügen“.</li>'}<li><b>iPhone (Safari):</b> Teilen-Symbol → „Zum Home-Bildschirm“.</li>${ios?'<li><b>Android (Chrome):</b> Menü ⋮ oben rechts → „App installieren“.</li>':''}</ul>`}<p class="note" style="margin:10px 0 0">Lege nur den Hub auf den Startbildschirm und öffne die anderen Apps über seine Kacheln. Jedes Symbol hat einen eigenen Speicher, und nur so sieht der Hub alle Daten.</p></div>`; }
+  h+=`<p class="note" style="margin:14px 4px 0">Stand der App-Dateien: <b class="mono">${esc(ImmoCore.BUILD||'älter als 5e')}</b></p>`;
+  h+='<h2>Adressen der Apps</h2><div class="card pad"><p class="note" style="margin:0 0 10px">Standard ist ein Nachbarordner, zum Beispiel ../vermietung/. Trage bei Bedarf die volle Adresse ein.</p>'+APPS.map(a=>`<label class="fld">${a.name}<input type="text" inputmode="url" data-url="${a.id}" value="${esc(urlOf(a))}" autocapitalize="off" autocorrect="off"></label>`).join('')+'<div class="row-actions"><button class="btn small" data-act="urlreset">Standard wiederherstellen</button></div></div>';
+  h+='<h2>Speicherstatus</h2><div class="card">'+APPS.filter(a=>a.key).map(a=>{ const n=rawSize(a.key); return `<div class="kv"><div>${a.name}<small>${n?'Daten gefunden, '+nf(n/1024,1)+' KB':'keine Daten in diesem Speicher'}</small></div><span class="pill ${n?'p-good':'p-none'}">${n?'ok':'leer'}</span></div>`; }).join('')+'</div>';
+  h+='<p class="note">Safari räumt Webseitendaten nach etwa 7 Tagen ohne Nutzung auf, Home-Bildschirm-Symbole sind davon ausgenommen. Lege deshalb regelmäßig ein Backup an, am besten nach größeren Änderungen.</p></main>';
+  return h+tabbar();
+}
+
+const UIKEY='hub-ui-v1'; let ui={}; try{ ui=JSON.parse(localStorage.getItem(UIKEY)||'{}')||{}; }catch(e){ ui={}; }
+const CLOSED_DEF={'home:Portfolio':1,'home:Auf einen Blick':1,'home:Apps':1,'home:Ankauf':0,'set:Empfohlene Einrichtung auf dem iPhone':1,'set:Wiederherstellen':1,'set:Adressen der Apps':1,'set:Speicherstatus':1,'fin:Konditionen ändern':1,'miete:Abgleich mit dem Cockpit':1,'fin:Finanzierungsverlauf':1};
+/*IN_APP*/const IN_APP=/^(capacitor|ionic|app):$/.test(location.protocol); const APP_HIDE=['Empfohlene Einrichtung auf dem iPhone','Adressen der Apps'];
+function foldify(){
+  const m=document.querySelector('#app main'); if(!m) return;
+  const hs=[...m.children].filter(n=>n.tagName==='H2');
+  hs.forEach(h=>{ if(IN_APP&&APP_HIDE.includes(h.textContent.trim())){ let n=h.nextSibling; while(n&&n.tagName!=='H2'){ const nx=n.nextSibling; n.remove(); n=nx; } h.remove(); return; } const id=tab+':'+h.textContent.trim(); const d=document.createElement('details'); d.className='fold'; d.dataset.fold=id;
+    d.open=id in ui?!!ui[id]:!CLOSED_DEF[id];
+    const sm=document.createElement('summary'); const body=document.createElement('div'); body.className='fb';
+    let n=h.nextSibling; while(n&&n.tagName!=='H2'){ const nx=n.nextSibling; body.appendChild(n); n=nx; }
+    h.replaceWith(d); sm.appendChild(h); d.append(sm,body); });
+  if(hs.length>2){ const t=document.createElement('div'); t.className='fold-tools'; t.innerHTML='<button type="button" data-act="foldall" data-v="1">Alle aufklappen</button><button type="button" data-act="foldall" data-v="0">Alle zuklappen</button>'; m.insertBefore(t,m.querySelector('details.fold')); }
+}
+document.addEventListener('toggle',e=>{ const d=e.target; if(d.matches&&d.matches('details.fold')){ ui[d.dataset.fold]=d.open; try{ localStorage.setItem(UIKEY,JSON.stringify(ui)); }catch(_){} } },true);
+/* ---------- Rechenlogik aus der Vermietungs-App (Kopie) ---------- */
+const p2=n=>String(n).padStart(2,'0');
+const MON=ImmoCore.lang==='en'?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']:['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+const todayS=ImmoCore.today;
+const ymOf=d=>(d||'').slice(0,7);
+const addM=ImmoCore.addYm;
+function diffM(a,b){ const [y1,m1]=a.split('-').map(Number),[y2,m2]=b.split('-').map(Number); return (y2-y1)*12+(m2-m1); }
+const dim=ym=>{ const [y,m]=ym.split('-').map(Number); return new Date(y,m,0).getDate(); };
+const fmtYm=ym=>ym?(MON[+ym.slice(5,7)-1]+' '+ym.slice(0,4)):'';
+const monthsList=(a,b)=>{ const o=[]; for(let m=a;m<=b;m=addM(m,1)) o.push(m); return o; };
+function stateAt(t,ym){ let kalt=t.kalt0||0, nk=t.nk||0; (t.changes||[]).slice().sort((a,b)=>a.ab<b.ab?-1:(a.ab>b.ab?1:0)).forEach(c=>{ if(c.ab&&c.ab<=ym){ if(c.kalt!==null&&c.kalt!==undefined) kalt=c.kalt; if(c.nk!==null&&c.nk!==undefined) nk=c.nk; } }); return {kalt,nk}; }
+function occ(t,ym){ const n=dim(ym), first=ym+'-01', last=ym+'-'+p2(n); const s=t.start||'0000-01-01', e=t.ende||'9999-12-31'; if(e<first||s>last) return 0; const a=s>first?s:first, b=e<last?e:last; return (+b.slice(8,10)-+a.slice(8,10)+1)/n; }
+function soll(t,ym){ const f=occ(t,ym); if(!f) return null; const st=stateAt(t,ym); return {f,kalt:st.kalt*f,nk:st.nk*f,stell:(t.stell||0)*f,total:(st.kalt+st.nk+(t.stell||0))*f}; }
+const istV=(V,t,ym)=>(V.pays||[]).filter(p=>p.tid===t.id&&p.monat===ym).reduce((s,p)=>s+(p.betrag||0),0);
+function cutoffYm(){ const d=todayS(), ym=ymOf(d); return +d.slice(8,10)>=4?ym:addM(ym,-1); }
+function saldoV(V,t){ if(!t.start) return 0; const to=cutoffYm(), from=ymOf(t.start); if(from>to) return 0; let s=0; monthsList(from,to).forEach(m=>{ const so=soll(t,m); if(so) s+=so.total-istV(V,t,m); }); (V.pays||[]).filter(p=>p.tid===t.id&&p.monat>to).forEach(p=>{ s-=p.betrag||0; }); return r2(s); }
+const isActiveT=(t,d)=>{ d=d||todayS(); return (!t.start||t.start<=d)&&(!t.ende||t.ende>=d); };
+
+/* ---------- Rechenmodell aus dem Bestands-Cockpit (Kopie) ---------- */
+function rentOf(o){ return (o.rent||0)+(o.garage||0); }
+function invOf(o){ return o.price*(1+o.nk/100)+((o.renoYear||0)<=0?(o.reno||0):0); }
+function disOf(o){ return Math.max(0,o.loan*Math.min(20,o.dis||0)/100); }
+function equityOf(o){ return Math.max(0,invOf(o)-o.loan+disOf(o)); }
+const S0={dZins:0,xVac:0,capex:0,capexYear:1,exitDisc:0};
+function simObj(o,A,S,years){
+  var g=A.rentG/100, cg=A.costG/100, vg=A.valueG/100, tx=(A.grenz||0)/100;
+  var r0=o.zins/100, bal=o.loan, pay=bal*(r0+o.tilg/100)/12, out=[];
+  var afaBasis=o.price*(1+o.nk/100)*((o.geb===undefined?80:o.geb)/100);
+  var afaMax=afaBasis*((o.afa===undefined?2:o.afa)/100), afaCum=0;
+  for(var y=1;y<=years;y++){
+    var rate=y<=o.fix?r0:Math.max(0,r0+S.dZins/100);
+    if(y===o.fix+1) pay=bal*(rate+A.anTilg/100)/12;
+    var vac=Math.min(100,Math.max(0,o.vac+S.xVac));
+    var inte=0, pr=0;
+    for(var m=0;m<12;m++){ if(bal<=0) break; var i=bal*rate/12, p=pay-i; if(p<0) p=0; if(p>bal) p=bal; bal-=p; inte+=i; pr+=p; }
+    var sp=Math.min(bal,Math.max(0,o.sonder||0)); bal-=sp;
+    var rent=(rentOf(o)+(y>Math.max(0,o.renoYear||0)?(o.renoRent||0):0))*12*Math.pow(1+g,y-1)*(1-vac/100);
+    var nonRecY=o.nonRec*12*Math.pow(1+cg,y-1);
+    var opex=nonRecY+o.maint*o.area*Math.pow(1+cg,y-1);
+    var capex=(y===S.capexYear?S.capex*o.area:0)+(y===Math.round(o.renoYear||0)&&y>=1?(o.reno||0):0);
+    var ds=inte+pr;
+    var afa=Math.min(afaMax,Math.max(0,afaBasis-afaCum)); afaCum+=afa;
+    var dD=disOf(o), dFix=Math.max(0,Math.round(o.fix||0));
+    var disDed=dD<=0?0:(dFix>=5?(y===1?dD:0):(y<=Math.max(1,dFix)?dD/Math.max(1,dFix):0));
+    var tax=(rent-nonRecY-inte-afa-disDed)*tx;
+    out.push({y:y,rent:rent,opex:opex,int:inte,pr:pr,sp:sp,ds:ds,capex:capex,cf:rent-opex-ds-capex,afa:afa,disDed:disDed,tax:tax,bal:bal,value:o.price*Math.pow(1+vg,y)});
+  }
+  return out;
+}
+
+/* ---------- Objekt-Zeitleiste ---------- */
+const reMeta=()=>{ if(!hub.meta||typeof hub.meta!=='object') hub.meta={}; return hub.meta; };
+const validD=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||'');
+function cpAssume(cp){ return Object.assign({rentG:1.5,costG:2,valueG:1.5,anTilg:2,sale:4,horizon:15,grenz:42},cp.assume||{}); }
+function numObj(o){ const n=Object.assign({},o); ['price','nk','area','loan','zins','tilg','fix','rent','nonRec','maint','vac'].forEach(k=>{ n[k]=+n[k]||0; }); n.fix=Math.max(0,Math.round(n.fix)); return n; }
+
+/* Monatsmodell: Kauf bis Exit. Ist-Monate aus der Vermietung, danach Prognose. */
+function objModel(o0,A,V){
+  const o=numObj(o0), H=Math.max(5,Math.min(30,Math.round(A.horizon||15))), rows=simObj(o,A,S0,H+1);
+  /* Darlehen aus der gemeinsamen Rechnung (ImmoCore.plan) statt aus der Jahresrechnung; ohne Datum der ersten Rate beginnt es im Monat nach dem Kauf. */
+  const loanPlan=k0=>{ const lo=Object.assign({},o0); if(!ImmoCore.isDate(lo.rate1)&&!(+lo.rest>0&&ImmoCore.isDate(lo.restDate))) lo.rate1=addM(k0,1)+'-01'; const P=ImmoCore.plan(lo); const byYm={}; if(P) P.rows.forEach(r=>{ byYm[r.ym]=r; }); return {P,byYm,lo}; };
+  const g=A.rentG/100, cg=A.costG/100, vg=A.valueG/100, tx=(A.grenz||0)/100;
+  const hm=hObjs().find(x=>x.links&&String(x.links.cp)===String(o0.id));
+  const oids=[...new Set(Object.keys(hub.map||{}).filter(k=>hub.map[k]===String(o0.id)).concat(hm?verIds(hm):[]))];
+  const tens=V&&Array.isArray(V.tens)?V.tens.filter(t=>oids.includes(String(t.objId))):[];
+  const meta=reMeta()[String(o0.id)]||{};
+  let kauf=validD(meta.kauf)?meta.kauf:(hm&&validD(kaufDate(hm))?kaufDate(hm):''), fallback=false;
+  if(!kauf){ const st=tens.map(t=>t.start).filter(validD).sort(); if(st.length){ kauf=st[0]; fallback=true; } }
+  const base={o,A,H,rows,tens,oids,meta,kauf,fallback};
+  if(!kauf) return Object.assign(base,{need:true});
+  const k0=ymOf(kauf), total=H*12, eq=equityOf(o), nowYm=ymOf(todayS()), kNow=diffM(k0,nowYm), tenantMode=tens.some(t=>validD(t.start)), LP=loanPlan(k0), lp0=LP.P&&LP.P.rows.length?LP.P.rows[0].ym:null;
+  const firstStart=tenantMode?tens.map(t=>t.start).filter(validD).sort()[0]:'';
+  const rentAt=ym=>tens.reduce((s,t)=>{ const so=soll(t,ym); return so?s+so.kalt+so.stell:s; },0);
+  const months=[]; let cum=0,cumA=0,cumSp=0,lastRent=0;
+  for(let k=0;k<total;k++){
+    const ym=addM(k0,k), y=Math.floor(k/12)+1, r=rows[y-1], inM=k%12, ist=k<=kNow;
+    let rent;
+    if(tenantMode){
+      if(ist){ rent=rentAt(ym); if(rent>0) lastRent=rent; }
+      else { let b=rentAt(ym); if(!(b>0)) b=lastRent>0?lastRent:rentOf(o); const gy=Math.max(0,Math.floor((k-kNow-1)/12)); rent=b*Math.pow(1+g,gy)*(1-Math.min(100,Math.max(0,o.vac))/100); }
+    } else rent=r.rent/12;
+    const lr=LP.byYm[ym], pre=lp0&&ym<lp0, lInt=lr?lr.it:0, opex=r.opex/12, ds=lr?lr.it+lr.pr:0, capex=inM===0?r.capex:0, sp=0;
+    const cf=rent-opex-ds-capex;
+    const tax=(rent-o.nonRec*Math.pow(1+cg,y-1)-lInt-r.afa/12-r.disDed/12)*tx;
+    cum+=cf; cumA+=cf-tax; cumSp+=sp;
+    const bal=lr?lr.bal:(pre||!LP.P?(LP.P?LP.P.start:0):0);
+    const value=o.price*Math.pow(1+vg,(k+1)/12);
+    months.push({k,ym,y,ist,rent,cf,cfA:cf-tax,cum,cumA,res:value-bal-eq+cum-cumSp,resA:value-bal-eq+cumA-cumSp,value,bal,tax});
+  }
+  const last=months[total-1], exitCost=last.value*A.sale/100;
+  const res0=o.price-o.loan-eq;
+  const nowI=Math.min(Math.max(kNow,-1),total-1), now=nowI>=0?months[nowI]:null;
+  const exitYm=addM(k0,total-1);
+  return Object.assign(base,{need:false,LP,k0,total,eq,months,kNow,nowI,now,res0,exitYm,exitRes:last.res-exitCost,exitResA:last.resA-exitCost,tenantMode,firstStart,tx,
+    factor:rentOf(o)>0?o.price/(rentOf(o)*12):null});
+}
+
+/* Ereignisse samt Wirkung der Mieterhöhungen */
+function objEvents(M,V,D){
+  const ev=[], o=M.o, td=todayS(), nowYm=ymOf(td), vobj=id=>((V&&V.objs)||[]).find(x=>x.id===id)||{};
+  const stamp=d=>({d,fut:d>td});
+  ev.push(Object.assign(stamp(M.kauf),{k:'kauf',t:M.fallback?'Erster Mietbeginn (Kaufdatum fehlt)':'Kauf',s:'Kaufpreis '+eur(o.price)+', Darlehen '+eur(o.loan)+', Eigenkapital '+eur(M.eq)}));
+  const bi=M.meta.bes, bo=D&&D.bes&&Array.isArray(D.bes.objs)?D.bes.objs.find(x=>String(x.id)===String(bi)):null;
+  if(bo&&bo.termin&&validD(bo.termin.slice(0,10))) ev.push(Object.assign(stamp(bo.termin.slice(0,10)),{k:'bes',t:'Besichtigung'+(bo.titel?': '+bo.titel:''),s:(+bo.kp>0?'Angebotspreis '+eur(+bo.kp):'')+(+bo.gebot>0?(+bo.kp>0?', ':'')+'Gebot '+eur(+bo.gebot):'')}));
+  if(M.LP&&M.LP.P){ const lo=M.LP.lo, ph=ImmoCore.phasesOf(lo); ImmoCore.bounds(lo,lo.rate1||'').forEach((d,k)=>{ const rr=M.LP.P.rows.find(r=>r.ym===d.slice(0,7)), bal=rr?rr.bal+rr.pr:0;
+    ev.push(Object.assign(stamp(d),{k:'zins',t:'Zinsbindung endet',s:'Zinssatz '+nf(ph[k].zins,2)+' % wird neu verhandelt, Restschuld laut Modell '+eur(bal)})); }); }
+  if((o.renoYear||0)>=1&&o.reno>0) ev.push(Object.assign(stamp(addM(M.k0,(Math.round(o.renoYear)-1)*12)+'-01'),{k:'reno',t:'Sanierung geplant',s:eur(o.reno)+(o.renoRent>0?', danach '+eur(o.renoRent)+' Mehrmiete im Monat':'')}));
+  const exitYm=M.exitYm, sorted=M.tens.slice().sort((a,b)=>(a.start||'')<(b.start||'')?-1:1);
+  let sumNow=0,sumExit=0,sumDelta=0,nErh=0;
+  sorted.forEach(t=>{
+    const unit=(vobj(t.objId).name||'Wohnung').replace(/^Beispiel:\s*/,''), name=t.mieter||'Mieter';
+    const prev=sorted.filter(x=>x!==t&&x.objId===t.objId&&x.ende&&t.start&&x.ende<t.start).sort((a,b)=>a.ende<b.ende?1:-1)[0];
+    if(validD(t.start)){
+      let s='Kaltmiete '+eur((t.kalt0||0)+(t.stell||0))+' im Monat';
+      if(prev){ const pm=stateAt(prev,ymOf(prev.ende)), d=(t.kalt0||0)+(t.stell||0)-(pm.kalt+(prev.stell||0)); s+=', '+(d>=0?'+':'−')+eur(Math.abs(d))+' gegenüber dem Vormieter ('+(d>=0?'+':'−')+eur(Math.abs(d)*12)+' im Jahr)'; }
+      ev.push(Object.assign(stamp(t.start),{k:'ein',t:name+' zieht ein'+(M.oids.length>1?' ('+unit+')':''),s}));
+    }
+    if(validD(t.ende)) ev.push(Object.assign(stamp(t.ende),{k:'aus',t:'Mietende '+name+(M.oids.length>1?' ('+unit+')':''),s:t.art==='befristet'?'befristetes Mietverhältnis':''}));
+    (t.changes||[]).slice().sort((a,b)=>a.ab<b.ab?-1:1).forEach(c=>{
+      if(!c.ab||c.kalt===null||c.kalt===undefined) return;
+      const abD=c.ab.length===7?c.ab+'-01':c.ab, abYm=ymOf(c.ab), pk=stateAt(t,addM(abYm,-1)).kalt, d=r2(c.kalt-pk); if(Math.abs(d)<0.005) return;
+      const d0=abD<M.kauf?M.kauf:abD, y0=ymOf(d0);
+      const endNow=t.ende&&ymOf(t.ende)<nowYm?ymOf(t.ende):nowYm;
+      const nNow=Math.max(0,diffM(y0,endNow)+1);
+      const nRest=Math.max(0,diffM(y0>addM(nowYm,1)?y0:addM(nowYm,1),exitYm)+1);
+      const effNow=d*nNow, effExit=effNow+d*nRest;
+      if(d>0){ nErh++; sumNow+=effNow; sumExit+=effExit; sumDelta+=d; }
+      ev.push(Object.assign(stamp(abD),{k:d>0?'erh':'sen',t:(d>0?'Mieterhöhung':'Mietsenkung')+' '+name+(M.oids.length>1?' ('+unit+')':''),
+        s:(c.grund?c.grund+'. ':'')+'Kaltmiete von '+eur2(pk)+' auf '+eur2(c.kalt),dm:d,eff:{nNow,effNow,effExit,perY:d*12,perYA:d*12*(1-M.tx),faustregel:M.factor?d*12*M.factor:null,fut:abD>td}}));
+    });
+  });
+  ev.push({d:td,k:'now',t:'Heute',s:'',fut:false});
+  ev.sort((a,b)=>a.d<b.d?-1:(a.d>b.d?1:(a.k==='now'?1:0)));
+  return {ev,sumNow,sumExit,sumDelta,nErh};
+}
+
+/* ---------- Diagramme (SVG) ---------- */
+function niceTicks(mn,mx,n){ if(mx-mn<1) mx=mn+1; const raw=(mx-mn)/n, p=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/p, st=(f<=1?1:f<=2?2:f<=5?5:10)*p; const a=Math.floor(mn/st)*st, b=Math.ceil(mx/st)*st, t=[]; for(let v=a;v<=b+st/2;v+=st) t.push(Math.round(v*1e6)/1e6); return t; }
+const kE=v=>Math.abs(v)>=1000?nf(v/1000,Math.abs(v)>=10000?0:1)+' k':nf(v,0);
+/* cfg: {series:[{ist:[[x,y]..],prog:[[x,y]..],color,w}], total, nowX, k0, step, marks:[{x,y,c}], label} */
+function lineChart(cfg){
+  const W=340,Hh=180,pl=40,pr=10,pt=12,pb=24, pw=W-pl-pr, ph=Hh-pt-pb;
+  const all=[]; cfg.series.forEach(s=>s.ist.concat(s.prog).forEach(p=>all.push(p[1])));
+  let mn=Math.min(...all), mx=Math.max(...all); if(cfg.zero){ mn=Math.min(mn,0); mx=Math.max(mx,0); }
+  const pad=(mx-mn)*0.06||1; const tk=niceTicks(mn-(cfg.zero?0:pad),mx+(cfg.zero?0:pad),4), lo=tk[0], hi=tk[tk.length-1];
+  const X=x=>pl+pw*x/cfg.total, Y=v=>pt+ph*(1-(v-lo)/((hi-lo)||1));
+  const path=(pts,step)=>{ if(!pts.length) return ''; let d='M'+X(pts[0][0]).toFixed(1)+','+Y(pts[0][1]).toFixed(1); for(let i=1;i<pts.length;i++){ if(step) d+='H'+X(pts[i][0]).toFixed(1); d+='L'+X(pts[i][0]).toFixed(1)+','+Y(pts[i][1]).toFixed(1); } return d; };
+  let s=`<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${esc(cfg.label)}">`;
+  tk.forEach(v=>{ s+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="var(--line)" stroke-width="${v===0?1.4:.6}"/><text x="${pl-5}" y="${(Y(v)+3.5).toFixed(1)}" text-anchor="end" font-size="10.5" fill="var(--muted)" font-family="var(--font-mono)">${kE(v)}</text>`; });
+  const yrs=[0,Math.round(cfg.total/2),cfg.total]; yrs.forEach((x,i)=>{ const ym=addM(cfg.k0,Math.min(x,cfg.total)); s+=`<text x="${X(x).toFixed(1)}" y="${Hh-6}" text-anchor="${i===0?'start':i===2?'end':'middle'}" font-size="10.5" fill="var(--muted)" font-family="var(--font-mono)">${ym.slice(0,4)}</text>`; });
+  if(cfg.nowX>0&&cfg.nowX<cfg.total) s+=`<line x1="${X(cfg.nowX).toFixed(1)}" x2="${X(cfg.nowX).toFixed(1)}" y1="${pt}" y2="${pt+ph}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="2 3"/><text x="${(X(cfg.nowX)+3).toFixed(1)}" y="${pt+9}" font-size="10" fill="var(--muted)">heute</text>`;
+  cfg.series.forEach(se=>{ s+=`<path d="${path(se.ist,cfg.step)}" fill="none" stroke="${se.color}" stroke-width="${se.w||2.2}" stroke-linejoin="round" stroke-linecap="round"/><path d="${path(se.prog,cfg.step)}" fill="none" stroke="${se.color}" stroke-width="${se.w||2.2}" stroke-dasharray="5 4" stroke-linejoin="round" stroke-linecap="round"/>`; });
+  (cfg.marks||[]).forEach(m=>{ s+=`<circle cx="${X(m.x).toFixed(1)}" cy="${Y(m.y).toFixed(1)}" r="4" fill="${m.c}" stroke="var(--surface)" stroke-width="1.5"/>`; });
+  const xs=[...new Set(cfg.series.flatMap(se=>se.ist.concat(se.prog).map(p=>p[0])))].sort((a,b)=>a-b);
+  const at=(se,x)=>{ let v=null; se.ist.concat(se.prog).forEach(p=>{ if(p[0]<=x) v=p[1]; }); return v; };
+  const sc={t:pt,b:pt+ph,p:xs.map(x=>({x:+X(x).toFixed(1),l:fmtYm(addM(cfg.k0,Math.round(x))),r:cfg.series.map(se=>{ const v=at(se,x); return v==null?null:[ImmoCore.t(se.name||'Wert'),eur(v),se.color,+Y(v).toFixed(1)]; }).filter(Boolean)}))};
+  return s.replace('<svg ','<svg data-sc="'+esc(JSON.stringify(sc))+'" ')+'</svg>';
+}
+function splitSeries(M,fn,startPt){
+  const ist=[],prog=[]; if(startPt) ist.push(startPt);
+  M.months.forEach(m=>{ const p=[m.k+1,fn(m)]; if(m.ist) ist.push(p); else prog.push(p); });
+  if(prog.length&&ist.length) prog.unshift(ist[ist.length-1]);
+  return {ist,prog};
+}
+
+/* ---------- Ansicht Objekte ---------- */
+let objSel='', objTab=(ui&&ui['objTab'])||'daten', taxA=!!(ui&&ui['taxA']);
+const sgn=(v,f)=>(v>=0?'+':'−')+(f||eur)(Math.abs(v));
+const cls=v=>v>0.5?'t-good':v<-0.5?'t-bad':'';
+function viewZeit(cp,o0,D,V,besId){ let h='';
+  const A=cpAssume(cp), M=objModel(o0,A,V), meta=reMeta()[String(o0.id)]||{};
+  M.meta=Object.assign({},M.meta,{bes:besId||''});
+  /* Daten zum Objekt */
+  const units=M.oids.map(id=>{ const x=V&&(V.objs||[]).find(u=>String(u.id)===id); return x?(x.name||'Wohnung').replace(/^Beispiel:\s*/,''):''; }).filter(Boolean);
+    let basis=`<div class="pad"><label class="fld">Kaufdatum<input type="date" data-meta="kauf" data-cid="${esc(o0.id)}" value="${esc(meta.kauf||(!M.fallback&&M.kauf)||'')}"></label>`;
+  basis+=`<p class="note" style="margin:2px 0 0">${units.length?'Zugeordnete Mieteinheiten: '+units.map(esc).join(', ')+'.':'Noch keine Mieteinheit zugeordnet. Das geht im Reiter Mieten. Bis dahin rechnet die Zeitleiste mit der Planmiete aus dem Cockpit.'}</p></div>`;
+  h+='<h2>Daten zum Objekt</h2><div class="card">'+basis+'</div>';
+  if(M.need) return h+`<div class="warn" style="margin-top:12px">Trage das Kaufdatum ein, dann berechnet der Hub Zeitleiste, Cashflow und Gesamtergebnis ab dem Kauf.</div>`;
+  const E=objEvents(M,V,D), now=M.now, T=taxA;
+  const cfK=T?'cumA':'cum', rK=T?'resA':'res';
+  /* Kennzahlen */
+  h+='<h2>Kennzahlen</h2><div class="row-actions" style="margin:0 0 8px"><button class="btn small'+(!T?' primary':'')+'" data-act="tax" data-v="0" aria-pressed="'+(!T)+'">Vor Steuer</button><button class="btn small'+(T?' primary':'')+'" data-act="tax" data-v="1" aria-pressed="'+T+'">Nach Steuer</button></div><div class="kpis">';
+  if(now){ h+=kpi('Cashflow seit Kauf',sgn(now[cfK]),'kumuliert bis '+fmtYm(now.ym),cls(now[cfK]));
+    h+=kpi('Gesamtergebnis heute',sgn(now[rK]),'Wert − Restschuld − Eigenkapital + Cashflow',cls(now[rK])); }
+  else h+=kpi('Kauf liegt in der Zukunft','–','Ergebnis ab Kaufdatum');
+  const exit=T?M.exitResA:M.exitRes;
+  h+=kpi('Gesamtergebnis bei Exit',sgn(exit),'Jahr '+M.H+' ('+M.exitYm.slice(0,4)+'), nach '+nf(A.sale,1)+' % Verkaufskosten',cls(exit));
+  const curRent=now?now.rent:0;
+  h+=kpi('Miete im Monat',eur(M.tenantMode&&now?curRent:rentOf(M.o)),M.tenantMode?'Ist laut Vermietung, Plan '+eur(rentOf(M.o)):'Planwert aus dem Cockpit');
+  h+='</div>';
+  if(E.nErh){ const f=T?(1-M.tx):1;
+    h+=`<div class="ok" style="margin-top:10px"><b>Mieterhöhungen wirken.</b> ${E.nErh===1?'Eine Erhöhung bringt':E.nErh+' Erhöhungen bringen'} zusammen <b>${sgn(E.sumDelta*12*f)}</b> im Jahr${T?' nach Steuer':''}. Bisher flossen dadurch <b>${sgn(E.sumNow*f)}</b> zusätzlich, bis zum Exit sind es <b>${sgn(E.sumExit*f)}</b>. So viel besser steht das Gesamtergebnis dadurch da.</div>`; }
+  else h+='<p class="note">Noch keine Mieterhöhung erfasst. Trage sie in der Vermietungs-App beim Mieter unter „Änderungen“ ein, dann zeigt die Zeitleiste ihre Wirkung.</p>';
+  if(M.tenantMode&&M.firstStart&&M.kauf<M.firstStart) h+=`<p class="note">Vor dem ersten erfassten Mietbeginn (${fmtYm(ymOf(M.firstStart))}) wird keine Miete gerechnet, die Kosten laufen aber ab Kauf.</p>`;
+  /* Diagramme */
+  const mk=[]; E.ev.filter(e=>e.k==='erh'||e.k==='sen').forEach(e=>{ const k=diffM(M.k0,ymOf(e.d)); if(k>=0&&k<M.total){ const m=M.months[k]; mk.push({x:k,y:m.rent,c:e.k==='erh'?'var(--good)':'var(--bad)'}); } });
+  const rs=splitSeries(M,m=>m.rent,null); rs.ist=rs.ist.map(p=>[p[0]-1,p[1]]); rs.prog=rs.prog.map(p=>[p[0]-1,p[1]]);
+  const nowX=M.nowI>=0?M.nowI+1:-1;
+  h+='<h2>Verlauf</h2><div class="card pad"><div style="font-size:12.5px;color:var(--muted);margin:0 0 4px">Gesamtmiete im Monat (kalt plus Stellplatz)</div><div class="chart">'+lineChart({series:[{name:'Monatsmiete',color:'var(--accent)',w:2.4,...rs}],total:M.total,nowX:nowX-1,k0:M.k0,step:true,zero:true,marks:mk,label:'Verlauf der Monatsmiete von '+fmtYm(M.k0)+' bis '+fmtYm(M.exitYm)+', Mieterhöhungen als Punkte'})+'</div>'
+    +'<div class="legend"><span><i style="background:var(--accent)"></i>Miete (gestrichelt: Prognose)</span><span><i style="background:var(--good);height:8px;width:8px;border-radius:50%"></i>Erhöhung</span></div>'
+    +'<div style="font-size:12.5px;color:var(--muted);margin:16px 0 4px">Kumulierter Cashflow und Gesamtergebnis'+(T?' (nach Steuer)':' (vor Steuer)')+'</div><div class="chart">';
+  const cs=splitSeries(M,m=>m[cfK],[0,0]), gs=splitSeries(M,m=>m[rK],[0,M.res0]);
+  h+=lineChart({series:[{name:'Cashflow kumuliert',color:'var(--good)',w:2.2,...cs},{name:'Gesamtergebnis',color:'var(--accent)',w:2.6,...gs}],total:M.total,nowX:nowX,k0:M.k0,zero:true,label:'Kumulierter Cashflow und Gesamtergebnis von '+fmtYm(M.k0)+' bis '+fmtYm(M.exitYm)})+'</div>'
+    +'<div class="legend"><span><i style="background:var(--accent)"></i>Gesamtergebnis</span><span><i style="background:var(--good)"></i>Cashflow kumuliert</span></div><p class="note" style="margin:8px 0 0">Durchgezogen sind Monate bis heute (Mieten aus der Vermietung), gestrichelt die Prognose mit den Annahmen aus dem Cockpit.</p></div>';
+  /* Zeitleiste */
+  h+='<h2>Zeitleiste</h2><div class="card pad"><ol class="tl">'+E.ev.map(e=>{
+    let x=`<li class="${e.k} ${e.fut?'fut':''}"><div class="d">${e.k==='now'?'HEUTE':fmtD(e.d)}${e.fut&&e.k!=='now'?' · geplant':''}</div>`;
+    if(e.k!=='now') x+=`<div class="t">${esc(e.t)}</div>`;
+    if(e.s) x+=`<div class="s">${esc(e.s)}</div>`;
+    if(e.eff){ const f=T?(1-M.tx):1, ef=e.eff;
+      x+=`<div class="eff"><div>Mehr Miete<b class="${cls(e.dm)}">${sgn(e.dm,eur2)}/Monat</b></div><div>Im Jahr${T?' nach Steuer':''}<b class="${cls(e.dm)}">${sgn(ef.perY*f)}</b></div>`
+        +`<div>Bisher zusätzlich (${ef.nNow} Mon.)<b class="${cls(e.dm)}">${sgn(ef.effNow*f)}</b></div><div>Bis Exit zusätzlich<b class="${cls(e.dm)}">${sgn(ef.effExit*f)}</b></div></div>`
+        +`<div class="s" style="margin-top:6px">Wirkung auf das Gesamtergebnis: ${sgn(ef.effNow*f)} bis heute, ${sgn(ef.effExit*f)} bis Exit.${ef.faustregel?' Als Faustregel steigt der Wert bei gleichem Kaufpreisfaktor ('+nf(M.factor,1)+'-fach) um etwa '+sgn(ef.faustregel)+', das ist oben nicht eingerechnet.':''}</div>`; }
+    return x+'</li>'; }).join('')+'</ol></div>';
+  /* Jahre */
+  const yr=[]; for(let y=1;y<=M.H;y++){ const ms=M.months.slice((y-1)*12,y*12); const st=ms[ms.length-1].ist?'Ist':ms[0].ist?'läuft':'Plan'; yr.push({y,ym:ms[0].ym,rent:ms.reduce((s,m)=>s+m.rent,0),cf:ms.reduce((s,m)=>s+(T?m.cfA:m.cf),0),res:ms[ms.length-1][rK],st}); }
+  h+='<h2>Jahre im Überblick</h2><div class="card"><table class="yt"><thead><tr><th>Jahr</th><th>Miete</th><th>Cashflow</th><th>Gesamt-ergebnis</th></tr></thead><tbody>'+yr.map(r=>`<tr><td>${r.y}<small>${fmtYm(r.ym)} · ${r.st}</small></td><td>${eur(r.rent)}</td><td class="${cls(r.cf)}">${sgn(r.cf)}</td><td class="${cls(r.res)}">${sgn(r.res)}</td></tr>`).join('')+'</tbody></table></div>';
+  h+=`<p class="note">Modellrechnung. Ist-Monate nutzen die Mieten der Vermietungs-App, Kosten, Zinsen und Wertentwicklung kommen pauschal aus dem Cockpit. Der Wert wächst mit ${nf(A.valueG,1)} % im Jahr, Mieterhöhungen wirken darin nur über den Cashflow. Das ersetzt keine Steuerberatung.</p>`;
+  return h;
+}
+
+/* ---------- Gemeinsame Objekte (Objektliste) ---------- */
+const MF=[['name','Bezeichnung','text'],['adresse','Adresse','text'],['kp','Kaufpreis (€)','num'],['qm','Wohnfläche (m²)','num'],['bj','Baujahr','int'],['zi','Zimmer','num'],['kalt','Kaltmiete im Monat (€)','num']];
+const FIN=[['loan','Darlehen ursprünglich (€)','num'],['zins','Sollzins (% p. a.)','num'],['tilg','Anfangstilgung (% p. a.)','num'],['rate1','Erste Rate an die Bank (Datum)','text'],['fix','Zinsbindung (Jahre)','num'],['fixEnd','Zinsbindung endet am (optional)','text'],['sonder','Sondertilgung (€ pro Jahr)','num'],['ratebk','Rate laut Bank (€ pro Monat)','num'],['rest','Restschuld laut Bank (optional)','num'],['restDate','Restschuld Stand (Datum)','text']];
+const MKT=[['mw','Marktwert aktuell (€)','num'],['mwDate','Marktwert Stand (Datum)','text']];
+const BRW=[['brw','Bodenrichtwert (€/m²)','num'],['brwDate','Stichtag (Datum)','text'],['gf','Grundstücksfläche (m²)','num'],['land','Bundesland','text']];
+const LAENDER=[['BW','Baden-Württemberg','https://www.gutachterausschuesse-bw.de/borisbw/?lang=de'],['BY','Bayern','https://www.boris-bayern.de/'],['BE','Berlin','https://fbinter.stadt-berlin.de/boris/'],['BB','Brandenburg','https://www.boris-brandenburg.de/boris-bb/'],['HB','Bremen','https://www.gutachterausschuss.bremen.de/bodenrichtwerte/bodenrichtwertkarte-online-9915'],['HH','Hamburg','https://www.hamburg.de/bsw/gutachterausschuss/1388404/boris-hh/'],['HE','Hessen','https://hvbg.hessen.de/immobilienwerte/boris-hessen'],['MV','Mecklenburg-Vorpommern','https://www.laiv-mv.de/Geoinformation/Wertermittlung/Bodenrichtwerte/'],['NI','Niedersachsen','https://immobilienmarkt.niedersachsen.de/bodenrichtwerte'],['NW','Nordrhein-Westfalen','https://www.boris.nrw.de/borisplus/?lang=de'],['RP','Rheinland-Pfalz','https://www.boris.rlp.de'],['SL','Saarland','https://geoportal.saarland.de/article/Bodenrichtwerte/'],['SN','Sachsen','https://www.boris.sachsen.de/bodenrichtwerte-aktuell-4032.html'],['ST','Sachsen-Anhalt','https://www.lvermgeo.sachsen-anhalt.de/de/geodatendienst_bodenrichtwerte.html'],['SH','Schleswig-Holstein','https://danord.gdi-sh.de/view/VBORIS'],['TH','Thüringen','https://www.bodenrichtwerte-th.de']];
+const BORIS_D='https://www.bodenrichtwerte-boris.de/borisde/?lang=de';
+const MFT=Object.fromEntries(MF.concat(FIN,MKT,BRW).map(f=>[f[0],f[2]])), MFL=Object.fromEntries(MF.concat(FIN,MKT,BRW).map(f=>[f[0],f[1].replace(/ \(.*\)/,'')]));
+const AD={cp:{f:{name:'name',kp:'price',qm:'area',kalt:'rent',loan:'loan',zins:'zins',tilg:'tilg',rate1:'rate1',fix:'fix',fixEnd:'fixEnd',sonder:'sonder',ratebk:'ratebk',rest:'rest',restDate:'restDate'},create:1,chip:'Cockpit'},bes:{f:{name:'titel',adresse:'adresse',kp:'kp',qm:'qm',bj:'bj',zi:'zi',kalt:'kalt'},create:1,chip:'Besichtigung'},
+  ren:{f:{name:'name',adresse:'adresse',qm:'qm',bj:'bj',kp:'kp'},create:1,chip:'Renovierung'},ver:{f:{adresse:'adresse'},create:1,chip:'Vermietung'},pv:{single:1,hubTied:1,f:{name:'name',adresse:'adresse'},chip:'PV und WP'},
+  sc:{single:1,hubTied:1,f:{kp:'kp',qm:'qm',bj:'bj',zi:'zi',kalt:'kalt'},chip:'Schnellcheck'},flip:{single:1,hubTied:1,f:{name:'name',qm:'qm',kp:'kp'},chip:'Flip'}};
+const AORDER=['bes','sc','cp','ren','flip','pv','ver'];
+const hObjs=()=>{ if(!Array.isArray(hub.objs)) hub.objs=[]; return hub.objs; };
+const getM=id=>hObjs().find(m=>m.id===id);
+const appDef=id=>APPS.find(a=>a.id===id);
+const appState=app=>rd(appDef(app).key);
+function appItems(app,st0){ const st=st0||appState(app); if(!st||AD[app].single) return []; if(app==='cp') return st.example||!Array.isArray(st.objs)?[]:st.objs; if(app==='ren') return Array.isArray(st.projs)?st.projs:[]; return Array.isArray(st.objs)?st.objs:[]; }
+const itemLabel=(app,o)=>app==='bes'?(o.titel||o.adresse||'Besichtigung'):app==='ver'?(o.name||'Wohnung').replace(/^Beispiel:\s*/,''):(o.name||'Objekt');
+/* Verknüpfung auflösen: {st,item,id} oder null */
+function resolve(m,app){
+  const l=m.links&&m.links[app]; if(!l) return null; const st=appState(app);
+  if(AD[app].single) return st&&typeof st==='object'&&!Array.isArray(st)&&(!AD[app].hubTied||st.hubId===m.id)?{st,item:st,id:'1'}:null;
+  if(!st) return null; const items=appItems(app,st);
+  const it=items.find(x=>String(x.hubId||'')===m.id)||items.find(x=>String(x.id)===String(l)); return it?{st,item:it,id:String(it.id)}:null;
+}
+const MN=(k,v)=>MFT[k]==='text'?String(v==null?'':v).trim():(+v||0);
+function readVals(app,item){ const o={}; Object.entries(AD[app].f).forEach(([k,af])=>{ o[k]=MN(k,item[af]); }); return o; }
+const sameV=(k,a,b)=>MFT[k]==='text'?String(a||'')===String(b||''):Math.abs((+a||0)-(+b||0))<0.005;
+const emptyV=v=>v===''||v===0||v==null;
+function diffsOf(m,app,r){ const av=readVals(app,r.item); return Object.keys(av).filter(k=>!sameV(k,m[k],av[k])&&!(emptyV(m[k])&&emptyV(av[k]))).map(k=>({k,mv:m[k],av:av[k]})); }
+function fmtMF(k,v){ if(emptyV(v)) return '–'; if(k==='loan'||k==='rest') return eur(+v); if(k==='zins'||k==='tilg') return nf(+v,2)+' %'; if(k==='restDate'||k==='rate1'||k==='fixEnd') return dDE(v); if(k==='fix') return nf(+v,Math.round(v)===+v?0:1)+' Jahre'; if(k==='sonder') return eur(+v); if(k==='ratebk') return eur2(+v); if(MFT[k]==='text') return esc(v); if(k==='kp'||k==='kalt') return eur(+v); if(k==='qm') return nf(+v,Math.round(v)===+v?0:1)+' m²'; if(k==='bj') return String(Math.round(v)); return nf(+v,Math.round(v)===+v?0:1); }
+function wApp(app,st){ try{ localStorage.setItem(appDef(app).key,JSON.stringify(st)); return true; }catch(e){ toast('Speichern nicht möglich.'); return false; } }
+/* Prozentfelder: ein einzelnes Trennzeichen ist immer das Dezimalzeichen (3.125 → 3,125 %). */
+const PCT=new Set(['zins','tilg']);
+function parsePct(v){ const t=String(v).trim().replace(/[\s%]/g,''); if(/^-?\d+[.,]\d+$/.test(t)) return parseFloat(t.replace(',','.'))||0; return parseNum(t); }
+function parseNum(v){ return ImmoCore.parseDE(v); }
+function syncMap(m){ if(m.links&&m.links.ver&&m.links.cp) hub.map[String(m.links.ver)]=String(m.links.cp); }
+function newMaster(x){ const m=Object.assign({id:'o'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:'Neues Objekt',adresse:'',kp:0,qm:0,bj:0,zi:0,kalt:0,links:{}},x||{}); hObjs().push(m); return m; }
+
+/* Pull: Werte aus der App ins Objekt. Push: Werte aus dem Objekt in die App. Leere Werte überschreiben nie. */
+/* onlyEmpty: beim Zuordnen füllt die App nur leere Felder des Objekts, bei Abweichung gilt das Objekt. */
+function pullFrom(m,app,onlyEmpty){ const r=resolve(m,app); if(!r) return 0; let n=0; diffsOf(m,app,r).forEach(d=>{ if(!emptyV(d.av)&&(!onlyEmpty||emptyV(d.mv))){ m[d.k]=d.av; n++; } }); if(n) saveHub(); return n; }
+function pushTo(m,app){ const r=resolve(m,app); if(!r) return 0; let n=0; diffsOf(m,app,r).forEach(d=>{ if(emptyV(d.mv)) return; r.item[AD[app].f[d.k]]=d.mv; if(app==='sc'&&d.k==='kalt') r.st.mieteMode='abs'; n++; }); if(n&&!wApp(app,r.st)) return 0; if(app==='ver'||app==='cp') { /* Kurzfassung bleibt gültig, Apps rechnen beim Öffnen neu */ } return n; }
+
+function createIn(app,m){
+  const st0=appState(app);
+  if(app==='bes'){ const st=st0&&Array.isArray(st0.objs)?st0:{v:1,nextId:1,objs:[]}; const id=Math.max(st.nextId||1,...st.objs.map(o=>(+o.id||0)+1),1); st.nextId=id+1;
+    st.objs.push({id,created:Date.now(),titel:m.name,adresse:m.adresse,termin:'',kontakt:'',tel:'',link:'',kp:m.kp,bj:m.bj,qm:m.qm,zi:m.zi,etage:'',kalt:m.kalt,stell:0,hgUml:0,hgNicht:0,grundst:0,items:{},custom:[],fragen:{},docs:{},notizen:'',extra:0,gebot:0,fazit:'',fazitNotiz:'',hubId:m.id});
+    return wApp('bes',st)?String(id):null; }
+  if(app==='cp'){ const st=st0&&Array.isArray(st0.objs)&&!st0.example&&st0.objs.length?st0:{example:false,assume:{rentG:1.5,costG:2,valueG:1.5,anTilg:2,sale:4,horizon:15,grenz:42},scen:{dZins:2,xVac:5,capex:200,capexYear:5,exitDisc:5},nextId:1,fv:null,objs:[]};
+    const id=Math.max(st.nextId||1,...st.objs.map(o=>(+o.id||0)+1),1); st.nextId=id+1;
+    /* Werte nur aus dem Objekt (oder dem Schnellcheck), keine angenommene Finanzierung */
+    const co={id,name:m.name||'Neues Objekt',price:+m.kp||0,nk:10.6,area:+m.qm||0,loan:0,zins:0,tilg:0,fix:0,rent:+m.kalt||0,nonRec:60,maint:12,vac:2,sonder:0,geb:80,afa:2,hubId:m.id,hubSynced:true};
+    Object.entries(AD.cp.f).forEach(([k,af])=>{ if(!emptyV(m[k])) co[af]=MFT[k]==='text'?String(m[k]):+m[k]; }); if(Array.isArray(m.fin2)) co.fin2=JSON.parse(JSON.stringify(m.fin2));
+    const sc=rd('immobilien-schnellcheck-v1'), sn=sc&&(sc.hubId===m.id?sc:((sc.offers||[]).find(x=>x.s&&x.s.hubId===m.id)||{}).s);
+    if(sn&&!(co.loan>0)){ const n=v=>isFinite(+v)?+v:0; if(n(sn.darlehen)>0) co.loan=Math.round(n(sn.darlehen)); if(n(sn.zins)>0) co.zins=n(sn.zins); if(n(sn.tilg)>0) co.tilg=n(sn.tilg); if(n(sn.bindung)>0) co.fix=Math.round(n(sn.bindung)); co.dis=n(sn.dis);
+      const nk=n(sn.grest)+n(sn.notar)+n(sn.makler); if(nk>0) co.nk=Math.round(nk*100)/100; co.nonRec=n(sn.hgNicht); co.garage=n(sn.stell); co.vac=n(sn.ausfall); if(n(sn.geb)>0) co.geb=n(sn.geb); if(n(sn.afa)>0) co.afa=n(sn.afa); const rn=n(sn.kueche)+n(sn.renov); if(rn>0){ co.reno=rn; co.renoYear=0; } }
+    st.objs.push(co);
+    return wApp('cp',st)?String(id):null; }
+  if(app==='ver'){ const st=st0&&Array.isArray(st0.objs)?st0:{v:1,objs:[],tens:[],pays:[],abr:{},settings:{kappung:20}}; const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    st.objs.push({id,name:m.name||'Wohnung',adresse:m.adresse||'',qm:m.qm||0,hubId:m.id}); return wApp('ver',st)?id:null; }
+  if(app==='ren'){ let L=[]; try{ L=JSON.parse(localStorage.getItem('renovierung-pending-v1')||'[]')||[]; }catch(e){}
+    L=L.filter(x=>x.hubId!==m.id); L.push({hubId:m.id,name:m.name,adresse:m.adresse,qm:m.qm,bj:m.bj,kp:m.kp});
+    try{ localStorage.setItem('renovierung-pending-v1',JSON.stringify(L)); }catch(e){ return null; } return 'pending'; }
+  return null;
+}
+function unitsOf(m){ const st=appState('ver'), cid=m.links&&m.links.cp?String(m.links.cp):''; if(!st||!Array.isArray(st.objs)) return []; return st.objs.filter(u=>String(u.hubId||'')===m.id||(cid&&hub.map&&String(hub.map[String(u.id)]||'')===cid)||String(m.links&&m.links.ver)===String(u.id)); }
+function unitsNote(m){ const u=unitsOf(m), s=rd(SUMKEY), act=id=>s&&Array.isArray(s.mieten)?s.mieten.filter(x=>String(x.oid)===String(id)).length:0; return u.length?`<p class="note" style="margin:6px 0 0">Wohnungen in diesem Objekt: ${u.map(x=>'<span translate="no">'+esc(x.name||'Wohnung')+'</span> ('+act(x.id)+' aktiv)').join(', ')}.</p>`:''; }
+function linkApp(m,app,id){ m.links=m.links||{}; if(AD[app].single) hObjs().forEach(o=>{ if(o!==m&&o.links&&o.links[app]) delete o.links[app]; }); m.links[app]=String(id); syncMap(m); saveHub(); }
+
+/* Verweise auf ein gelöschtes Hub-Objekt in allen Apps entfernen */
+function dropRefs(id){
+  Object.keys(AD).forEach(app=>{ const st=appState(app); if(!st||typeof st!=='object') return; let ch=false;
+    if(st.hubId===id){ delete st.hubId; ch=true; }
+    ['objs','projs'].forEach(k=>{ if(Array.isArray(st[k])) st[k].forEach(x=>{ if(x&&x.hubId===id){ delete x.hubId; delete x.hubSynced; ch=true; } }); });
+    if(Array.isArray(st.offers)) st.offers.forEach(x=>{ if(x&&x.s&&x.s.hubId===id){ delete x.s.hubId; ch=true; } });
+    if(ch) wApp(app,st); });
+  try{ const L=JSON.parse(localStorage.getItem('renovierung-pending-v1')||'[]'); if(Array.isArray(L)) localStorage.setItem('renovierung-pending-v1',JSON.stringify(L.filter(x=>x.hubId!==id))); }catch(e){}
+}
+function importObjs(){
+  const O=hObjs(), used=app=>new Set(O.map(m=>resolve(m,app)).filter(Boolean).map(r=>r.id));
+  const nm=s=>String(s||'').trim().toLowerCase(); let n=0;
+  const uc=used('cp'), ub=used('bes'), ur=used('ren');
+  const byName=(app,items,name,usedSet)=>items.find(x=>!usedSet.has(String(x.id))&&nm(itemLabel(app,x))===nm(name));
+  appItems('cp').forEach(o=>{ if(uc.has(String(o.id))) return;
+    const m=newMaster({name:o.name||'Objekt',kp:+o.price||0,qm:+o.area||0,kalt:+o.rent||0,links:{cp:String(o.id)}});
+    const oid=Object.keys(hub.map).find(k=>String(hub.map[k])===String(o.id)); if(oid) m.links.ver=oid;
+    const b=byName('bes',appItems('bes'),m.name,ub); if(b){ m.links.bes=String(b.id); ub.add(String(b.id)); if(!m.adresse) m.adresse=b.adresse||''; if(!m.bj) m.bj=+b.bj||0; if(!m.zi) m.zi=+b.zi||0; }
+    const r=byName('ren',appItems('ren'),m.name,ur); if(r){ m.links.ren=String(r.id); ur.add(String(r.id)); if(!m.adresse) m.adresse=r.adresse||''; if(!m.bj) m.bj=+r.bj||0; }
+    syncMap(m); n++; });
+  appItems('bes').forEach(b=>{ if(ub.has(String(b.id))) return; newMaster({name:itemLabel('bes',b),adresse:b.adresse||'',kp:+b.kp||0,qm:+b.qm||0,bj:+b.bj||0,zi:+b.zi||0,kalt:+b.kalt||0,links:{bes:String(b.id)}}); n++; });
+  appItems('ren').forEach(r=>{ if(ur.has(String(r.id))) return; newMaster({name:r.name||'Projekt',adresse:r.adresse||'',kp:+r.kp||0,qm:+r.qm||0,bj:+r.bj||0,links:{ren:String(r.id)}}); n++; });
+  saveHub(); return n;
+}
+
+/* ---------- Ansicht: Liste, Detail ---------- */
+function chipsOf(m){ return AORDER.filter(a=>m.links&&m.links[a]).map(a=>`<span class="chip" style="--cc:${COLS[a]}">${AD[a].chip}</span>`).join(''); }
+function figsOf(m){ const t=[]; if(m.kp) t.push(eur(m.kp)); if(m.qm) t.push(fmtMF('qm',m.qm)); if(m.kalt) t.push(eur(m.kalt)+' kalt'); return t.join(' · '); }
+const isD=ImmoCore.isDate, dDE=ImmoCore.fmtDate;
+const MFDATE=new Set(['restDate','rate1','mwDate','fixEnd','brwDate']);
+function mfField(m,k,l,t){ const isD=MFDATE.has(k); return `<label class="fld">${l}<input ${isD?'type="date"':'type="text"'} ${(t==='text'||isD)?'':'inputmode="decimal"'} data-mf="${k}" data-oid="${esc(m.id)}" value="${esc(t==='text'?(m[k]||''):(m[k]?ImmoCore.numIn(m[k]):''))}" autocomplete="off"></label>`; }
+/* groups: Liste aus Schlüsseln oder Paaren [k1,k2], die nebeneinander stehen. */
+function mfGrid(m,defs,groups){ const by=Object.fromEntries(defs.map(d=>[d[0],d])); const one=k=>mfField(m,k,by[k][1],by[k][2]);
+  return groups.map(g=>Array.isArray(g)?`<div class="g2">${g.map(one).join('')}</div>`:one(g)).join(''); }
+function finCalc(m){ const cb=ImmoCore.currentBalance(m); return cb?{pay:cb.pay,now:cb.now,mode:cb.mode,paid:cb.paid}:null; }
+const MWLINKS=[['ImmoScout24 Immobilienbewertung','https://www.immobilienscout24.de/immobilienbewertung/'],['Immowelt Immobilienbewertung','https://www.immowelt.de/immobilienbewertung']];
+function brwCard(m){
+  const land=m.land||'BW', L=LAENDER.find(x=>x[0]===land)||LAENDER[0];
+  const sel=`<label class="fld">Bundesland<select data-mf="land" data-oid="${esc(m.id)}">${LAENDER.map(x=>`<option value="${x[0]}" ${x[0]===land?'selected':''}>${esc(x[1])}</option>`).join('')}</select></label>`;
+  const inp=mfGrid(m,BRW,[['brw','brwDate'],'gf']);
+  const brw=+m.brw||0, gf=+m.gf||0, kp=+m.kp||0; let out='';
+  if(brw>0&&gf>0){ const bw=brw*gf; out+=`<div class="kv"><div>Bodenwert<small>Bodenrichtwert × Grundstücksfläche</small></div><b>${eur(bw)}</b></div>`;
+    if(kp>0&&bw<kp) out+=`<div class="kv"><div>Gebäudeanteil am Kaufpreis<small>grobe Orientierung für die Abschreibung, ersetzt keine Aufteilung des Finanzamts</small></div><b>${nf((1-bw/kp)*100,0)} %</b></div>`; }
+  else out+='<p class="note" style="margin:6px 0 0">Mit Bodenrichtwert und Grundstücksfläche rechnet der Hub den Bodenwert aus.</p>';
+  out+=`<div class="row-actions" style="margin:12px 0 4px"><a class="btn small primary" href="${esc(L[2])}" ${IN_APP?'':'target="_blank" '}rel="noopener">Bodenrichtwert ${esc(L[1])} öffnen</a></div><div class="row-actions" style="margin:4px 0"><button class="btn small" data-act="mwCopy" data-id="${esc(m.id)}">Adresse kopieren</button><a class="btn small" href="${BORIS_D}" ${IN_APP?'':'target="_blank" '}rel="noopener">Bundesweit (BORIS-D)</a></div><p class="note" style="margin:8px 0 0">Gib die Adresse im Portal ein, lies den Bodenrichtwert in € pro m² und den Stichtag ab und trage beides oben ein. Die Portale lassen sich nicht automatisch füllen oder auslesen.</p>`;
+  return '<h2>Bodenrichtwert</h2><div class="card pad">'+sel+inp+out+'</div>';
+}
+function mwCard(m){
+  const inp=mfGrid(m,MKT,[['mw','mwDate']]);
+  const mw=+m.mw||0; let out='';
+  if(mw>0){
+    const c=finCalc(m), rs=c?c.now:0, kp=+m.kp||0, old=isD(m.mwDate)&&(Date.now()-new Date(m.mwDate+'T12:00:00'))/864e5>365;
+    out+=`<div class="kv"><div>Stand<small>${m.mwDate?dDE(m.mwDate):'ohne Datum'}</small></div>${old?'<span class="pill p-mid">älter als 12 Monate</span>':'<span class="pill p-good">aktuell genug</span>'}</div>`;
+    if(c) out+=`<div class="kv"><div>Eigenkapital im Objekt<small>Marktwert minus Restschuld ${eur(rs)}</small></div><b>${eur(mw-rs)}</b></div><div class="kv"><div>Beleihungsauslauf<small>Restschuld ÷ Marktwert</small></div><b>${nf(rs/mw*100,0)} %</b></div>`;
+    if(kp>0) out+=`<div class="kv"><div>Wertentwicklung seit Kauf<small>Kaufpreis ${eur(kp)}</small></div><b>${(mw>=kp?'+':'')+eur(mw-kp)} (${(mw>=kp?'+':'')+nf((mw/kp-1)*100,1)} %)</b></div>`;
+  } else out+='<p class="note" style="margin:10px 0 0">Trage den Marktwert ein, dann rechnet der Hub Eigenkapital, Beleihungsauslauf und Wertentwicklung.</p>';
+  out+=`<p class="note" style="margin:12px 0 6px">Wert abfragen: Die Portale lassen sich nicht automatisch füllen. Kopiere die Adresse und gib sie dort ein.</p><div class="row-actions" style="margin:0 0 8px"><button class="btn small" data-act="mwCopy" data-id="${esc(m.id)}">Adresse kopieren</button></div>`+MWLINKS.map(([l,u])=>`<div class="row-actions" style="margin:4px 0"><a class="btn small" href="${u}" ${IN_APP?"":"target=\"_blank\" "}rel="noopener">${l}</a></div>`).join('')+'<p class="note" style="margin:8px 0 0">Online-Schätzungen sind Richtwerte. Für Beleihung oder Verkauf zählt ein Gutachten oder Angebote aus der Lage.</p>';
+  return '<h2>Marktwert</h2><div class="card pad">'+inp+out+'</div>';
+}
+/* ---------- Finanzierung (Reiter) ---------- */
+const planOf=m=>ImmoCore.plan(m);
+function finChart(pl,mode){
+  const R=pl.rows, thin=R.length>150?3:1, idx=[]; for(let i=0;i<R.length;i+=thin) idx.push(i); if(idx[idx.length-1]!==R.length-1) idx.push(R.length-1);
+  const mk=(f)=>{ const pts=[]; if(mode==='bal') pts.push([0,pl.start]); idx.forEach(i=>pts.push([i+1,f(R[i])])); const cut=Math.max(0,pl.nowIdx);
+    return {ist:pts.filter(p=>p[0]<=cut),prog:pts.filter(p=>p[0]>=cut)}; };
+  const total=R.length, series=mode==='bal'?[{name:'Restschuld',color:'var(--accent)',w:2.4,...mk(r=>r.bal)}]:[{name:'Zinsanteil',color:'var(--bad)',w:2.2,...mk(r=>r.it)},{name:'Tilgungsanteil',color:'var(--good)',w:2.2,...mk(r=>r.pr)}];
+  const marks=mode==='bal'?pl.phases.filter(q=>q.i0>0).map(q=>({x:q.i0,y:q.startBal,c:'var(--mid)'})):[];
+  return lineChart({series,total,nowX:pl.nowIdx,k0:pl.k0,zero:true,marks,label:mode==='bal'?'Verlauf der Restschuld bis '+fmtYm(pl.end||'')+', Anschlussfinanzierungen als Punkte':'Zinsanteil und Tilgungsanteil der Rate je Monat'});
+}
+function phField(m,i,k,l){ const v=(m.fin2[i]||{})[k]; return `<label class="fld">${l}<input type="text" inputmode="decimal" data-ph="${i}" data-pk="${k}" data-oid="${esc(m.id)}" value="${esc(v?ImmoCore.numIn(v):'')}" autocomplete="off"></label>`; }
+function finInputs(m){
+  const B=ImmoCore.bounds(m,m.rate1||''); if(!Array.isArray(m.fin2)) m.fin2=[];
+  let h='<h2>Finanzierung</h2><div class="card pad"><div class="phh"><b>1. Darlehen</b></div>'
+   +mfGrid(m,FIN,[['loan','rate1'],['zins','tilg'],['fix','fixEnd'],['ratebk','sonder']])
+   +'<p class="note" style="margin:2px 0 8px">Die Rate laut Bank (Zins plus Tilgung, ohne Versicherungen) ersetzt die Modellrate. So stimmen Restschuld und „Miete minus Rate“ mit dem Kontoauszug überein.</p>'
+   +'<p class="note" style="margin:6px 0 4px">Optional: Restschuld laut Bank. Sie überschreibt die Rechnung ab dem Stichtag.</p>'+mfGrid(m,FIN,[['rest','restDate']]);
+  m.fin2.forEach((f,i)=>{ h+=`<div class="phb"><div class="phh"><b>${i+2}. Anschlussfinanzierung</b><button class="btn small danger" data-act="phDel" data-i="${i}" data-id="${esc(m.id)}">Entfernen</button></div>`
+    +`<p class="note" style="margin:0 0 8px">${B[i]?'Beginnt am '+dDE(B[i])+', übernimmt die Restschuld des Vorgängers.':'Beginnt am Ende der Zinsbindung des Vorgängers. Trage dort die Jahre ein.'}</p>`
+    +`<div class="g2">${phField(m,i,'zins','Sollzins (% p. a.)')}${phField(m,i,'tilg','Anfangstilgung (% p. a.)')}</div><div class="g2">${phField(m,i,'fix','Zinsbindung (Jahre)')}${phField(m,i,'ratebk','Rate laut Bank (€/Monat)')}</div></div>`; });
+  h+=`<div class="row-actions" style="margin:14px 0 0"><button class="btn small" data-act="phAdd" data-id="${esc(m.id)}">Anschlussfinanzierung hinzufügen</button></div><p class="note" style="margin:8px 0 0">Nach Ablauf der Zinsbindung folgt ein neues Darlehen mit eigenem Zins und eigener Tilgung. So entsteht der komplette Verlauf bis zur Volltilgung, vergangen und geplant.</p></div>`;
+  return h;
+}
+/* Szenarien aus dem Cockpit (Layout Phase 5): Basisfall des verknüpften Cockpit-Objekts */
+function szenCard(m){ const c=(ImmoCore.sums().cp||{})[m.id], a=appDef('cp'); const link=`<a class="btn small" href="${esc(urlOf(a))}">Im Cockpit rechnen</a>`;
+  if(!c||!c.x) return '<h2>Szenarien</h2><div class="ui-empty"><b>Noch keine Szenarien</b>'+(m.links&&m.links.cp?'Öffne das Cockpit einmal, dann erscheinen hier Cashflow nach der Zinsbindung, Zins bis Cashflow 0 und Liquiditätsbedarf.':'Verknüpfe das Objekt unter Objekte → Apps mit dem Bestands-Cockpit. Dann erscheinen hier Cashflow nach der Zinsbindung, Zins bis Cashflow 0 und Liquiditätsbedarf.')+(m.links&&m.links.cp?link:'')+'</div>';
+  const x=c.x, red=n=>n?' style="color:var(--bad)"':'', ST={ok:['Trägt sich','ok'],mid:['Kleiner Zuschuss','mid'],bad:['Zuschuss nötig','bad']}[x.stress]||['–',''];
+  return '<h2>Szenarien</h2><div class="ui-kpis">'
+    +`<div class="ui-kpi"><span class="l">Cashflow/Mon. Jahr 1</span><span class="v"${red(x.cf1n)}>${esc(x.cf1)}</span><span class="s">vor Steuern</span></div>`
+    +`<div class="ui-kpi"><span class="l">Nach Zinsbindung</span><span class="v"${red(x.aftern)}>${esc(x.after)}</span><span class="s">Cashflow/Mon., Zins wie heute</span></div>`
+    +`<div class="ui-kpi"><span class="l">Zins bis Cashflow 0</span><span class="v">${esc(x.be)}</span><span class="s">Puffer für die Anschlussfinanzierung</span></div>`
+    +`<div class="ui-kpi"><span class="l">Leerstandspuffer</span><span class="v">${esc(x.vac)}</span><span class="s">bis Cashflow 0</span></div>`
+    +`<div class="ui-kpi"><span class="l">Liquiditätsbedarf</span><span class="v">${esc(x.need)}</span><span class="s">größte Lücke in ${x.h} Jahren</span></div>`
+    +`<div class="ui-kpi"><span class="l">EK-Verzinsung</span><span class="v">${esc(x.irr)}</span><span class="s"><span class="ui-pill ${ST[1]}">${ST[0]}</span></span></div>`
+    +`</div><div class="row-actions">${link}</div><p class="note">Basisfall aus dem Bestands-Cockpit mit seinen Annahmen. Zinsänderung, Leerstand und Verkauf spielst du dort im Reiter Szenarien durch.</p>`; }
+function viewFin(){
+  const O=hObjs(); let h=bar('Darlehen und Steuer','Finanzen')+'<main>';
+  if(!O.length) return h+'<div class="empty"><b>Noch keine Objekte</b>Lege unter „Objekte“ ein Objekt an. Danach trägst du hier die Finanzierung ein.</div></main>'+tabbar();
+  let id=ui['finObj']; if(!getM(id)) id=(O.find(m=>ImmoCore.currentBalance(m))||O[0]).id; const m=getM(id); ui['finObj']=id;
+  if(O.length>1) h+=`<label class="fld">Objekt<select data-fo="1">${O.map(o=>`<option value="${esc(o.id)}" ${o.id===id?'selected':''}>${esc(o.name||'Objekt')}</option>`).join('')}</select></label>`;
+  const fseg=ui['finSeg']==='tax'?'tax':ui['finSeg']==='rep'?'rep':'loan';
+  h+=`<div class="seg" role="tablist" aria-label="Bereich" style="margin-top:10px"><button type="button" role="tab" data-act="finSeg" data-v="loan" aria-selected="${fseg==='loan'}">Darlehen</button><button type="button" role="tab" data-act="finSeg" data-v="tax" aria-selected="${fseg==='tax'}">Steuerjahr</button><button type="button" role="tab" data-act="finSeg" data-v="rep" aria-selected="${fseg==='rep'}">Berichte</button></div>`;
+  if(fseg==='tax') return h+taxView(m)+'</main>'+tabbar();
+  if(fseg==='rep'&&window.PX) return h+PX.reportsView()+'</main>'+tabbar();
+  const pl=planOf(m), inp=finInputs(m);
+  if(!pl) return h+inp+`<p class="note">Trage Darlehen, Zins, Tilgung und das Datum der ersten Rate ein, dann erscheinen hier Verlauf und Tilgungsplan.</p></main>`+tabbar();
+  /* Finanzierungsverlauf */
+  const ST={done:['abgeschlossen','p-none'],run:['läuft','p-good'],plan:['geplant','p-mid']};
+  const paidIt=pl.rows.filter(r=>r.past).reduce((a,r)=>a+r.it,0), allIt=pl.rows.reduce((a,r)=>a+r.it,0);
+  let vl='<h2>Finanzierungsverlauf</h2><div class="card">'+pl.phases.map((q,x)=>{ const nm=x===0?'Darlehen':(q.k+1)+'. Darlehen (Anschluss)'; const st=ST[q.status];
+    return `<div class="kv"><div>${esc(nm)}<small>${fmtYm(q.from)} bis ${fmtYm(q.to)}<br>Zins ${nf(q.z,2)} % · Tilgung ${nf(q.t,2)} % · Rate ${eur2(q.pay)}${q.bank?' (Bank)':''}<br>Restschuld ${eur(q.startBal)} → ${eur(q.endBal)}${q.assumed?'<br>Annahme: gleiche Konditionen nach Ende der Zinsbindung':''}</small></div><span class="pill ${st[1]}">${st[0]}</span></div>`; }).join('')
+   +'</div><p class="note">Zinsbindung und Anschlussfinanzierungen trägst du unter „Konditionen ändern“ ein. Die Restschuld jedes Abschnitts ist der Anfang des nächsten.</p>';
+  /* Aktuell */
+  const ph=pl.phases.find(q=>q.status==='run')||pl.phases[pl.phases.length-1], E=ImmoCore.bounds(m,m.rate1||'')[pl.phase]||'';
+  let cur=`<h2>Restschuld heute</h2><div class="kpis">`+kpi('Restschuld',eur(pl.now),pl.mode==='rate1'?pl.paid+' Raten gezahlt':pl.mode==='bankD'?'Bankwert fortgeschrieben':pl.mode==='bank'?'Bankwert ohne Stichtag':'Datum der ersten Rate fehlt, volles Darlehen angenommen');
+  const L=+m.loan>0?+m.loan:pl.start;
+  cur+=kpi('Getilgt',nf(Math.max(0,(1-pl.now/L)*100),1)+' %',eur(Math.max(0,L-pl.now))+' von '+eur(L));
+  cur+=kpi('Schuldenfrei',pl.end?fmtYm(pl.end):'offen',pl.end?'nach '+nf(Math.max(0,pl.rows.length-pl.nowIdx)/12,1)+' Jahren':'Tilgung zu klein');
+  cur+=kpi('Zinsen gesamt',pl.end?eur(allIt):'–','davon bisher '+eur(paidIt));
+  cur+='</div><div class="card" style="margin-top:8px">'
+   +`<div class="kv"><div>Rate pro Monat<small>${pl.fromBank?'laut Bank':'berechnet aus Zins und Tilgung'} · Zins ${nf(pl.z,2)} % · Tilgung ${nf(pl.t,2)} %</small></div><b>${eur2(pl.pay)}</b></div>`;
+  if(E){ const ei=pl.rows.findIndex(r=>r.ym===E.slice(0,7)); const left=E>=ImmoCore.today()&&ei>=0?(ei>0?pl.rows[ei-1].bal:pl.start):null; const mo=Math.round((new Date(E+'T12:00:00')-new Date())/(30.44*864e5));
+    cur+=`<div class="kv"><div>Zinsbindung endet<small>${mo<0?'vor '+(-mo)+' Monaten':mo===0?'in diesem Monat':'in '+mo+' Monaten'}${left!=null?', Restschuld dann '+eur(left):''}</small></div><b>${dDE(E)}</b></div>`; }
+  else cur+=`<div class="kv"><div>Zinsbindung<small>Jahre oder Datum eintragen</small></div><span class="pill p-none">offen</span></div>`;
+  cur+='</div>';
+  const g='<h2>Verlauf</h2><div class="card pad"><div style="font-size:12.5px;color:var(--muted);margin:0 0 4px">Restschuld (durchgezogen bisher, gestrichelt geplant, Punkte = Anschlussfinanzierung)</div><div class="chart">'+finChart(pl,'bal')+'</div><div style="font-size:12.5px;color:var(--muted);margin:14px 0 4px">Zinsanteil <span style="color:var(--bad)">●</span> und Tilgungsanteil <span style="color:var(--good)">●</span> der Rate je Monat</div><div class="chart">'+finChart(pl,'mix')+'</div></div>';
+  const yr={}, starts={}; pl.phases.forEach(q=>{ if(q.i0>0) starts[q.from.slice(0,4)]=q; });
+  pl.rows.forEach(r=>{ const y=r.ym.slice(0,4); const o=(yr[y]=yr[y]||{y,it:0,pr:0,bal:0,past:true,n:0}); o.it+=r.it; o.pr+=r.pr; o.bal=r.bal; o.n++; if(!r.past) o.past=false; });
+  const tbl=`<div class="card" style="overflow-x:auto"><table class="yt"><thead><tr><th style="text-align:left">Jahr</th><th>Zinsen</th><th>Tilgung</th><th>Restschuld</th></tr></thead><tbody>${Object.values(yr).map(o=>{ const q=starts[o.y]; return (q?`<tr><td colspan="4" style="text-align:left;color:var(--mid);font-family:var(--font-sans,inherit);font-size:12px">Anschluss ab ${fmtYm(q.from)}: Zins ${nf(q.z,2)} %, Tilgung ${nf(q.t,2)} %</td></tr>`:'')+`<tr${o.past?' style="opacity:.6"':''}><td style="text-align:left">${o.y}${o.n<12?'<small> ('+o.n+' M.)</small>':''}</td><td>${eur(o.it)}</td><td>${eur(o.pr)}</td><td>${eur(o.bal)}</td></tr>`; }).join('')}</tbody></table></div>`;
+  const mrows=`<details class="fold" style="margin-top:10px"><summary><span>Alle Monate anzeigen</span></summary><div class="fb"><div class="card" style="overflow-x:auto"><table class="yt"><thead><tr><th style="text-align:left">Monat</th><th>Zinsen</th><th>Tilgung</th><th>Restschuld</th></tr></thead><tbody>${pl.rows.map(r=>`<tr${r.past?' style="opacity:.6"':''}><td style="text-align:left">${fmtYm(r.ym)}</td><td>${eur2(r.it)}</td><td>${eur2(r.pr)}</td><td>${eur(r.bal)}</td></tr>`).join('')}</tbody></table></div></div></details>`;
+  const note='<p class="note">Modellrechnung mit festem Zins und fester Rate je Abschnitt. Ohne eingetragene Anschlussfinanzierung läuft der letzte Abschnitt mit denselben Konditionen weiter. Sondertilgungen sind nicht enthalten. '+(pl.mode==='rate1'?'Vergangene Monate sind abgeblendet.':'Ohne Datum der ersten Rate beginnt der Plan beim Bankwert.')+(pl.open?' Mit dieser Tilgung wird das Darlehen in 50 Jahren nicht getilgt.':'')+' Für den genauen Stand zählt der Kontoauszug deiner Bank.</p>';
+  /* Ergebnisse zuerst, die Eingaben eingeklappt darunter */
+  return h+cur+g+vl+szenCard(m)+inp.replace('<h2>Finanzierung</h2>','<h2>Konditionen ändern</h2>')+'<h2>Tilgungsplan</h2>'+tbl+mrows+note+'</main>'+tabbar();
+}
+/* ---------- Objektseite: Lebenszyklus und Werkzeug-Kacheln (Layout Phase 3) ---------- */
+const PHASES=['Suchen','Prüfen','Kaufen','Halten','Verbessern'];
+/* Phase aus den Daten: Mieter → Halten, Darlehen → Kaufen, Besichtigung → Prüfen, sonst Suchen. Renovierung oder PV markiert zusätzlich Verbessern. */
+const PKEY=['suchen','pruefen','kaufen','halten','verbessern'];
+/* Wohnungen der Vermietung, die zu diesem Objekt gehören: eigene Hub-Kennung oder Verknüpfung im Hub */
+function verIds(m){ return unitsOf(m).map(x=>String(x.id)); }
+/* Ersatz, falls die Vermietung noch kein Ergebnis für den Hub geschrieben hat: aktive Mieter aus ihrer Kurzfassung */
+function verAgg(m){ const ids=new Set(verIds(m)); if(!ids.size) return null; const s=rd(SUMKEY); if(!s||!Array.isArray(s.mieten)) return null;
+  const L=s.mieten.filter(x=>ids.has(String(x.oid))); return {n:L.length,k:L.reduce((a,x)=>a+(x.kalt||0)+(x.stell||0),0)}; }
+/* Vorschlag: Wohnung mit gleichem Namen oder gleicher Adresse, die noch keinem Objekt gehört */
+const normN=v=>String(v||'').toLowerCase().replace(/^beispiel:\s*/,'').replace(/str\.?(\s|$)/g,'straße$1').replace(/\s+/g,' ').trim();
+function verSuggest(m){ if(verIds(m).length) return null; const used=new Set(hObjs().filter(o=>o!==m).flatMap(o=>verIds(o)));
+  const keys=[normN(m.name),normN(m.adresse)].filter(Boolean); if(!keys.length) return null;
+  return appItems('ver').find(x=>!used.has(String(x.id))&&!(x.hubId&&x.hubId!==m.id)&&keys.some(k=>k===normN(x.name)||k===normN(x.adresse)))||null; }
+function autoPhase(m,S){ const L=m.links||{}, v=(S.ver||{})[m.id]||verAgg(m);
+  let i=0; if(v&&v.n>0) i=3; else if(+m.loan>0||+m.rest>0||ImmoCore.isDate(m.rate1)) i=2; else if(L.bes||(S.bes||{})[m.id]) i=1;
+  const impr=i>=2&&!!(L.ren||L.pv||(S.ren||{})[m.id]||(S.pv||{})[m.id]); return {i,impr}; }
+/* Phase: von Hand gesetzt (m.phase) oder aus den Daten */
+function phaseOf(m,S0){ const S=S0||ImmoCore.sums(), a=autoPhase(m,S), k=PKEY.indexOf(m.phase);
+  if(k<0) return Object.assign({manual:false,auto:a},a);
+  return k===4?{i:3,impr:true,manual:true,auto:a}:{i:k,impr:false,manual:true,auto:a}; }
+/* Stufe für Liste und Filter */
+function stageOf(m,S){ if(m.archived) return {grp:['arch'],p:[['Abgelegt','p-none']]};
+  const P=phaseOf(m,S), b=(S.bes||{})[m.id];
+  if(P.i===0) return {grp:['ankauf'],p:[[(S.sc||{})[m.id]?'Geprüft':'Neu','p-none']]};
+  if(P.i===1) return {grp:['ankauf'],p:[b&&b.g>0?['Gebot','p-mid']:b&&b.d>0?['Besichtigt','p-none']:['Termin','p-none']]};
+  const g=['bestand'], pl=[[P.i===2?'Gekauft':'Bestand','p-good']]; if(P.impr){ g.push('proj'); pl.push(['Projekt','p-mid']); } return {grp:g,p:pl}; }
+const FILTERS=[['all','Alle'],['ankauf','Ankauf'],['bestand','Bestand'],['proj','Projekte'],['arch','Abgelegt']];
+const TILE_ORDER=['ver','cp','pv','ren','sc','bes','flip'];
+function tileOf(m,app,S){
+  const a=appDef(app), L=m.links||{}, r=resolve(m,app), nm=esc(a.short||a.name);
+  let sm=(S[app]||{})[m.id];
+  if(app==='ver'){ const sg=verSuggest(m); if(sg&&!r) return {empty:false,h:`<button type="button" class="ui-tile" data-tool="ver" data-act="verSug" data-id="${esc(sg.id)}"><span class="nm">${nm}</span><span class="v">Zuordnen?</span><span class="s">Wohnung „<span translate="no">${esc(itemLabel('ver',sg))}</span>“ gefunden. Tippen zum Verknüpfen.</span></button>`};
+    if(!sm){ const g=verAgg(m); if(g) sm={v:g.n?eur2(g.k):'–',s:g.n?g.n+' Mieter · Kaltmiete und Stellplatz':'Kein aktiver Mieter',st:g.n?'ok':'none'}; } }
+  const linked=!!L[app]||!!sm;
+  if(!linked) return {empty:true,h:`<button type="button" class="ui-tile is-empty" data-tool="${app}" data-act="objTab" data-v="apps"><span class="nm">${nm}</span><span class="s">Verknüpfen oder anlegen</span></button>`};
+  let href=''; const base=urlOf(a);
+  if(r){ href=app==='bes'?base+'#/o/'+r.id+'/daten':app==='ren'?base+'#/p/'+r.id+'/erg':base; }
+  /* Ohne Ergebnis führt die Kachel zu „Apps“, wo die Zuordnung geprüft und geändert wird */
+  if(!sm||sm.st==='none') href='';
+  const v=sm?esc(sm.v):'–', st=sm?sm.st:'none', sub=sm?esc(sm.s):(r?'Verknüpft, noch kein Ergebnis':'Verknüpft');
+  const col=st==='bad'?' style="color:var(--bad)"':st==='mid'?' style="color:var(--mid)"':'';
+  const inner=`<span class="nm">${nm}</span><span class="v"${col}>${v}</span><span class="s">${sub}${!r&&AD[app].single?' · in der App ist ein anderes Objekt offen':''}</span>`;
+  return {empty:false,h:href?`<a class="ui-tile" data-tool="${app}" href="${esc(href)}">${inner}</a>`:`<button type="button" class="ui-tile" data-tool="${app}" data-act="objTab" data-v="apps">${inner}</button>`};
+}
+function objOverview(m){
+  const P=phaseOf(m), S=ImmoCore.sums();
+  const hasCov=!!(m.cover&&(DOCS||[]).some(d=>d.id===m.cover));
+  let h=`<div class="ui-cover" data-cover="${esc(m.id)}"><label class="cov-btn"><input type="file" accept="image/*" data-covfile="${esc(m.id)}" hidden><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>${hasCov?'Bild ändern':'Bild hinzufügen'}</span></label><div><div class="t" translate="no">${esc(m.name||'Objekt')}</div>${m.adresse&&m.adresse!==m.name?`<div class="a" translate="no">${esc(m.adresse)}</div>`:''}${m.link?`<div class="a"><a href="${esc(m.link)}" style="color:#fff">Inserat öffnen ›</a></div>`:''}</div></div>`;
+  h+='<ol class="ui-steps" aria-label="Phase: '+PHASES[P.impr?4:P.i]+'" style="margin:14px 0 6px">'+PHASES.map((n,k)=>{ const c=k<P.i?'done':(k===P.i||(k===4&&P.impr))?'cur':''; return `<li class="${c}"><i></i>${n}</li>`; }).join('')+'</ol>';
+  h+=`<p class="note" style="margin:0 4px 10px">${P.manual?'Von Hand gesetzt. ':''}${['Noch kein Termin und keine Finanzierung. Prüfe das Inserat im Schnellcheck.','Besichtigung angelegt. Als Nächstes Gebot und Finanzierung.','Finanzierung eingetragen. Sobald der erste Mieter in der Vermietung steht, gilt das Objekt als Bestand.','Im Bestand: mindestens ein aktiver Mieter.','Im Bestand mit laufendem Projekt.'][P.impr?4:P.i]}</p>`;
+  const AN=PHASES[P.auto.impr?4:P.auto.i];
+  h+=`<div class="phrow"><label class="fld">Phase<select data-phase="${esc(m.id)}"><option value="" ${P.manual?'':'selected'}>Automatisch (${AN})</option>${PHASES.map((n,k)=>`<option value="${PKEY[k]}" ${m.phase===PKEY[k]?'selected':''}>${n}</option>`).join('')}</select></label>`
+    +(m.archived?`<button class="btn" data-act="objArch" data-v="0">Zurückholen</button>`:(P.i<=1?`<button class="btn" data-act="objArch" data-v="1">Ablegen</button>`:''))+'</div>';
+  if(m.archived) h+='<p class="note" style="margin:-4px 4px 12px">Abgelegt: erscheint nur noch unter dem Filter „Abgelegt“.</p>';
+  const cb=ImmoCore.currentBalance(m), mw=+m.mw||0, kp=+m.kp||0;
+  h+='<div class="ui-kpis">'
+    +`<div class="ui-kpi"><span class="l">${mw?'Marktwert':'Kaufpreis'}</span><span class="v">${mw||kp?eur(mw||kp):'–'}</span><span class="s">${mw&&m.mwDate?'Stand '+dDE(m.mwDate):(mw?'eigene Schätzung':(kp?'ohne Marktwert':'nicht eingetragen'))}</span></div>`
+    +(cb?`<div class="ui-kpi"><span class="l">Restschuld heute</span><span class="v">${eur(cb.now)}</span><span class="s">Rate ${eur2(cb.pay)}</span></div>`
+        :`<div class="ui-kpi"><span class="l">Kaltmiete</span><span class="v">${+m.kalt?eur(+m.kalt):'–'}</span><span class="s">${+m.kalt&&kp?'Brutto '+nf(m.kalt*12/kp*100,1)+' %':'pro Monat'}</span></div>`)
+    +'</div>';
+  const T=TILE_ORDER.map(a=>tileOf(m,a,S)), full=T.filter(t=>!t.empty), empty=T.filter(t=>t.empty);
+  h+='<h2>Werkzeuge</h2><div class="ui-tiles">'+full.concat(empty).map(t=>t.h).join('')+'</div>';
+  h+='<p class="note">Jede Kachel zeigt das Ergebnis der App für dieses Objekt. Tippe darauf, um die App zu öffnen. Leere Kacheln führen zu „Apps“, wo du verknüpfst oder anlegst.</p>';
+  /* Eigenkapital im Objekt über 12 Monate (Paket E) */
+  if((+m.mw||+m.kp)&&ImmoCore.currentBalance(m)){ const ser=equitySeries([m]); h+=`<div class="ui-card" style="margin-top:10px"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span class="ui-label">Eigenkapital im Objekt</span><b class="mono">${eur(ser[ser.length-1])}</b></div><svg viewBox="0 0 300 36" preserveAspectRatio="none" style="width:100%;height:36px" aria-hidden="true"><path d="${sparkPath(ser,300,36)}" fill="none" stroke="var(--good)" stroke-width="2.2" vector-effect="non-scaling-stroke"/></svg><span class="note" style="margin:0">${signedEur(ser[ser.length-1]-ser[0])} in 12 Monaten durch Tilgung${m.mw?'':' (Kaufpreis als Wert)'}</span></div>`; }
+  if(window.PX) h+=PX.cfCard(m);
+  h+=objExtras(m);
+  return h;
+}
+function viewObj(){
+  if(objSel&&!getM(objSel)) objSel='';
+  const _m=objSel&&getM(objSel); let h=bar(_m?'Objekt':'Gemeinsame Daten',_m?(_m.name||'Objekt'):'Objekte')+'<main>'; const O=hObjs();
+  if(!objSel){
+    if(!O.length&&!hub.objsAsked){ hub.objsAsked=1; if(importObjs()) toast('Objekte aus deinen Apps übernommen.'); }
+    if(!O.length) h+=`<div class="empty"><b>Noch keine Objekte</b>Lege ein Objekt an. Adresse, Kaufpreis und Fläche trägst du nur einmal ein und gibst sie von hier an die Apps weiter.</div>`;
+    else { const S=ImmoCore.sums(), ST=new Map(O.map(m=>[m,stageOf(m,S)])), cnt=f=>f==='all'?O.filter(m=>!m.archived).length:O.filter(m=>ST.get(m).grp.includes(f)).length;
+      let flt=ui['objFilter']||'all'; if(!FILTERS.some(x=>x[0]===flt)||(flt!=='all'&&!cnt(flt))) flt='all';
+      h+='<div class="fchips" role="group" aria-label="Filter">'+FILTERS.filter(([f])=>f==='all'||cnt(f)).map(([f,l])=>`<button type="button" data-act="objFilter" data-v="${f}" aria-pressed="${flt===f}">${l} ${cnt(f)}</button>`).join('')+'</div>';
+      const OL=O.filter(m=>flt==='all'?!m.archived:ST.get(m).grp.includes(flt));
+      h+='<div class="cards">'+OL.map(m=>`<button type="button" class="ocard" data-act="objOpen" data-id="${esc(m.id)}"><span class="th"><span class="t">${esc(m.name||'Objekt')}</span><span class="pills">${ST.get(m).p.map(([t,c])=>`<span class="pill ${c}">${t}</span>`).join('')}</span></span><span class="a">${esc(m.adresse||'Adresse fehlt')}</span><span class="f">${esc(figsOf(m))||'Noch keine Eckdaten'}</span><span class="chips">${chipsOf(m)||'<span class="a">in keiner App verknüpft</span>'}</span></button>`).join('')+'</div>'; }
+    h+='<div class="row-actions"><button class="btn primary" data-act="objNew">Neues Objekt</button><button class="btn" data-act="objImport">Aus den Apps einlesen</button>'+(window.PX?PX.objBtn():'')+'</div>';
+    h+='<p class="note">Das Objekt ist die gemeinsame Quelle. Von hier schickst du Daten in Besichtigung, Schnellcheck, Cockpit, Renovierung und Flip. Änderungen in einer App holst du mit „Objekt ← App“ zurück.</p></main>';
+    return h+tabbar();
+  }
+  const m=getM(objSel);
+  h+=`<div class="row-actions" style="margin-top:0"><button class="btn small" data-act="objBack">‹ Alle Objekte</button></div>`;
+  const OT=[['ueb','Überblick'],['daten','Daten'],['apps','Apps'],['verl','Verlauf']]; if(!OT.some(x=>x[0]===objTab)) objTab='ueb';
+  h+=`<div class="seg" role="tablist" aria-label="Bereich des Objekts">${OT.map(([i,l])=>`<button type="button" role="tab" data-act="objTab" data-v="${i}" aria-selected="${objTab===i}">${l}</button>`).join('')}</div>`;
+  if(objTab==='ueb') h+=objOverview(m);
+  if(objTab==='daten'){ h+='<h2>Stammdaten</h2><div class="card pad">'+mfGrid(m,MF,['name','adresse',['kp','qm'],['bj','zi'],'kalt'])+'</div>'; h+=mwCard(m); h+=brwCard(m); }
+  /* Apps */
+  let total=0, rows='';
+  AORDER.forEach(app=>{
+    const a=appDef(app), r=resolve(m,app), linked=!!(m.links&&m.links[app]);
+    let st, body='';
+    if(r){ const df=diffsOf(m,app,r); total+=df.length; st=df.length?`<span class="pill p-mid">${df.length} Abweichung${df.length===1?'':'en'}</span>`:'<span class="pill p-good">Gleich</span>';
+      if(df.length) body+='<div class="dif">'+df.map(d=>`<div><span>${MFL[d.k]}</span><span class="mono">Objekt ${fmtMF(d.k,d.mv)}</span><span class="mono">App ${fmtMF(d.k,d.av)}</span></div>`).join('')+'</div>';
+      body+=`<div class="row-actions" style="margin:8px 0 0">${df.length?`<button class="btn small" data-act="objPull" data-app="${app}">Objekt ← App</button><button class="btn small primary" data-act="objPush" data-app="${app}">App ← Objekt</button>`:''}<a class="btn small" href="${esc(urlOf(a))}">Öffnen</a>${app==='ver'?'<button class="btn small" data-act="objMoreVer">Weitere Wohnung</button>':''}<button class="btn small" data-act="objUnlink" data-app="${app}">Lösen</button></div>${app==='ver'?unitsNote(m):''}`; }
+    else if(linked&&m.links[app]==='pending'){ st='<span class="pill p-mid">Wartet</span>'; body=`<p class="note" style="margin:6px 0 0">Das Projekt wird angelegt, sobald du die Renovierung öffnest.</p><div class="row-actions" style="margin:8px 0 0"><a class="btn small" href="${esc(urlOf(a))}">Öffnen</a><button class="btn small" data-act="objUnlink" data-app="${app}">Abbrechen</button></div>`; }
+    else if(AD[app].hubTied&&linked){ st='<span class="pill p-mid">Nicht aktuell</span>'; body=`<p class="note" style="margin:6px 0 0">In ${esc(a.short||a.name)} ist gerade ein anderes Objekt geöffnet. Öffne die App und lade dieses Objekt dort über die Auswahl.</p><div class="row-actions" style="margin:8px 0 0"><a class="btn small" href="${esc(urlOf(a))}">Öffnen</a></div>`; }
+    else { st=linked?'<span class="pill p-bad">Nicht gefunden</span>':'<span class="pill p-none">Nicht verknüpft</span>';
+      const usedIds=new Set(hObjs().filter(o=>o!==m).map(o=>{ const rr=resolve(o,app); return rr&&rr.id; }).filter(Boolean));
+      const free=AD[app].single?[]:appItems(app).filter(x=>!usedIds.has(String(x.id))&&!(x.hubId&&x.hubId!==m.id));
+      body='<div class="row-actions" style="margin:8px 0 0">';
+      if(AD[app].single){ const has=appState(app); body+=`<button class="btn small primary" data-act="objSetCur" data-app="${app}" data-mode="push">${a.short||a.name} mit Objekt füllen</button>${has?`<button class="btn small" data-act="objSetCur" data-app="${app}" data-mode="link">Aktuellen Stand zuordnen</button>`:''}`; }
+      else { if(AD[app].create) body+=`<button class="btn small primary" data-act="objCreate" data-app="${app}">Neu anlegen</button>`; }
+      body+='</div>';
+      if(free.length) body+=`<label class="fld" style="margin:8px 0 0">Vorhandenes zuordnen<select data-objlink="${app}"><option value="">– auswählen –</option>${free.map(x=>`<option value="${esc(x.id)}">${esc(itemLabel(app,x))}</option>`).join('')}</select></label>`;
+      if(app==='ver') body+='<p class="note" style="margin:6px 0 0">„Neu anlegen“ erstellt die Wohnung in der Vermietungs-App mit Name, Adresse und Fläche des Objekts.</p>'; }
+    rows+=`<div class="arow"><div class="ah"><span class="ai">${icon(ICKEY[app]||app,26)}</span><b>${esc(a.name)}</b>${st}</div>${body}</div>`;
+  });
+  if(objTab==='apps'){ h+='<h2>Apps und Übergaben</h2><div class="card">'+rows+'</div>';
+  if(total) h+='<div class="row-actions"><button class="btn primary" data-act="objPushAll">Alle Apps an das Objekt angleichen</button></div>'; }
+  /* Zeitleiste */
+  const cr=resolve(m,'cp'), D=data();
+  if(objTab==='verl'){
+  /* Mit Bestands-Cockpit: volle Zeitleiste. Sonst (oder wenn das Cockpit-Objekt fehlt): Verlauf aus Hub, Vermietung und Darlehen. */
+  let zt=''; if(cr&&D.cp){ const cpAll=curCp(); if(cpAll&&!cpAll.example){ const o0=cpAll.objs.find(o=>String(o.id)===cr.id); if(o0) zt=viewZeit(cpAll,o0,D,D.ver,m.links.bes); } }
+  h+=zt; if(!zt||zt.indexOf('class="chart"')<0) h+=objVerlauf(m,D,!!cr); }
+  if(objTab==='daten') h+='<div class="row-actions"><button class="btn danger" data-act="objDel">Objekt aus der Liste entfernen</button></div><p class="note">Entfernt nur das Objekt im Hub. Die Daten in den Apps bleiben bestehen.</p></main>';
+  return h+tabbar();
+}
+
+
+/* ---------- Objekt-Verlauf ohne Bestands-Cockpit ---------- */
+function objVerlauf(m,D,linked){
+  const V=D.ver, ids=verIds(m), T=(V&&Array.isArray(V.tens))?V.tens.filter(t=>ids.includes(String(t.objId))):[];
+  const pl=planOf(m), kd=kaufDate(m), cur=ymOf(todayS());
+  const starts=[kd&&ymOf(kd), pl&&pl.rows&&pl.rows[0]&&pl.rows[0].ym, ...T.map(t=>validD(t.start)?ymOf(t.start):'')].filter(Boolean).sort();
+  if(!starts.length) return '<h2>Verlauf</h2><div class="empty"><b>Noch kein Verlauf</b>Trage Kaufdatum oder Darlehen ein oder ordne Mieter aus der Vermietung zu. Dann zeigt der Hub hier Miete, Restschuld, Eigenkapital und alle Ereignisse.</div>';
+  let k0=starts[0]; if(diffM(k0,cur)>120) k0=addM(cur,-120); if(diffM(k0,cur)<6) k0=addM(cur,-6);
+  const total=diffM(k0,cur); let h='<h2>Verlauf</h2>';
+  /* Miete je Monat (kalt plus Stellplatz) */
+  if(T.length){ const ist=[]; let last=null;
+    for(let k=0;k<=total;k++){ const ym=addM(k0,k); const v=r2(T.reduce((a,t)=>{ const so=soll(t,ym); return a+(so?so.kalt+so.stell:0); },0)); if(v!==last||k===total){ ist.push([k,v]); last=v; } }
+    const mk=[]; T.forEach(t=>(t.changes||[]).forEach(c=>{ if(c.ab&&c.kalt!=null){ const k=diffM(k0,c.ab); if(k>=0&&k<=total){ const p=ist.filter(q=>q[0]<=k).pop(); mk.push({x:k,y:p?p[1]:0,c:'var(--good)'}); } } }));
+    h+='<div class="card pad"><div style="font-size:12.5px;color:var(--muted);margin:0 0 4px">Miete im Monat (kalt plus Stellplatz, laut Vermietung)</div><div class="chart">'+lineChart({series:[{name:'Monatsmiete',color:'var(--accent)',w:2.4,ist,prog:[]}],total,nowX:-1,k0,step:true,zero:true,marks:mk,label:'Monatsmiete von '+fmtYm(k0)+' bis heute, Mietänderungen als Punkte'})+'</div></div>'; }
+  /* Restschuld und Eigenkapital */
+  if(pl) h+='<div class="card pad" style="margin-top:10px"><div style="font-size:12.5px;color:var(--muted);margin:0 0 4px">Restschuld (durchgezogen bisher, gestrichelt geplant)</div><div class="chart">'+finChart(pl,'bal')+'</div></div>';
+  if(+m.mw||+m.kp){ const ist=[]; const step=Math.max(1,Math.round(total/24)); for(let k=0;k<=total;k+=step) ist.push([k,Math.round(eqOfObjs([m],addM(k0,k)))]); if(ist[ist.length-1][0]!==total) ist.push([total,Math.round(eqOfObjs([m],cur))]);
+    h+='<div class="card pad" style="margin-top:10px"><div style="font-size:12.5px;color:var(--muted);margin:0 0 4px">Eigenkapital im Objekt (Marktwert oder Kaufpreis minus Restschuld)</div><div class="chart">'+lineChart({series:[{name:'Eigenkapital',color:'var(--good)',w:2.4,ist,prog:[]}],total,nowX:-1,k0,zero:true,label:'Eigenkapital von '+fmtYm(k0)+' bis heute'})+'</div></div>'; }
+  /* Ereignisse */
+  const ev=[]; if(kd) ev.push([kd,'Kauf']);
+  if(pl&&pl.rows&&pl.rows[0]) ev.push([pl.rows[0].ym+'-01','Erste Darlehensrate']);
+  T.forEach(t=>{ const who=t.mieter||'Mieter'; if(validD(t.start)) ev.push([t.start,'Mietbeginn: '+who]); if(validD(t.ende)) ev.push([t.ende,'Mietende: '+who]);
+    (t.changes||[]).forEach(c=>{ if(c.ab&&c.kalt!=null) ev.push([c.ab+'-01','Mietänderung '+who+': Kaltmiete '+eur(c.kalt)]); }); });
+  (DOCS||[]).filter(d=>d.obj===m.id&&ImmoCore.isDate(d.date)).forEach(d=>ev.push([d.date,'Unterlage: '+(d.name||d.kind||'Dokument')]));
+  hItems().filter(i=>i.obj===m.id&&i.done).forEach(i=>{ const d=typeof i.done==='number'?ImmoCore.localIso(new Date(i.done)).slice(0,10):(ImmoCore.isDate(i.date)?i.date:''); if(d) ev.push([d,(i.kind==='termin'?'Termin: ':'Erledigt: ')+(i.text||'Aufgabe')]); });
+  ev.sort((a,b)=>a[0]<b[0]?1:-1);
+  if(ev.length) h+='<h2>Ereignisse</h2><div class="card">'+ev.slice(0,25).map(e=>`<div class="kv"><div>${esc(e[1])}</div><span class="mono" style="white-space:nowrap">${fmtD(e[0])}</span></div>`).join('')+'</div>';
+  if(!linked) h+='<p class="note">Mit dem Bestands-Cockpit verknüpft zeigt der Verlauf zusätzlich Cashflow, Wirkung von Mieterhöhungen und das Gesamtergebnis ab dem Kauf.</p>';
+  return h;
+}
+
+/* ---------- Schnell erfassen: Miete eingegangen ---------- */
+let lastPay=null;
+const wV=V=>{ try{ localStorage.setItem('vermietung-v1',JSON.stringify(V)); return true; }catch(e){ toast('Speichern nicht möglich.'); return false; } };
+function refreshSummary(V){ try{ const s=rd(SUMKEY); if(!s) return; s.arrears=r2((V.tens||[]).reduce((a,t)=>a+Math.max(0,saldoV(V,t)),0)); s.ts=Date.now(); localStorage.setItem(SUMKEY,JSON.stringify(s)); }catch(e){} }
+function dueList(V){
+  const td=todayS(), ym=ymOf(td), late4=+td.slice(8,10)>=4, out=[];
+  ((V&&V.tens)||[]).forEach(t=>{ if(!isActiveT(t,td)||!validD(t.start)) return;
+    const from=addM(ym,-5), a=ymOf(t.start)>from?ymOf(t.start):from;
+    for(const m of monthsList(a,ym)){ const so=soll(t,m); if(!so) continue; const open=r2(so.total-istV(V,t,m)); if(open>0.5){ out.push({t,m,open,paid:istV(V,t,m)>0.5,late:m<ym||late4,unit:((V.objs||[]).find(x=>x.id===t.objId)||{}).name||'Wohnung'}); break; } } });
+  return out.sort((a,b)=>(b.late-a.late)||(a.m<b.m?-1:1));
+}
+function bookPay(V,t,m,betrag){ const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6); V.pays=V.pays||[]; V.pays.push({id,tid:t.id,datum:todayS(),monat:m,betrag,note:'Schnellerfassung im Hub'}); return id; }
+function payCard(V){
+  let h=''; const L=dueList(V);
+  if(lastPay) h+=`<div class="ok"><div>${lastPay.ids.length===1?'Zahlung gebucht':lastPay.ids.length+' Zahlungen gebucht'}: ${esc(lastPay.txt)}</div><div class="row-actions" style="margin:6px 0 0"><button class="btn small" data-act="undoPay">Rückgängig</button></div></div>`;
+  if(!L.length) return h?h:'';
+  h+='<div class="card">'+L.map((d,i)=>`<div class="li ${d.late?'over':'soon'}"><div><div class="a">${esc(d.t.mieter||'Mieter')} · ${esc(d.unit.replace(/^Beispiel:\s*/,''))}</div><div class="b">${fmtYm(d.m)}: ${d.paid?'Rest ':''}${eur2(d.open)} ${d.late?'offen':'fällig bis zum 3.'}</div></div><button class="btn small primary" data-act="payNow" data-i="${i}">Eingegangen</button></div>`).join('')+'</div>';
+  if(L.length>1) h+=`<div class="row-actions"><button class="btn" data-act="payAll">Alle ${L.length} als eingegangen buchen</button></div>`;
+  return h+'<p class="note">Bucht den offenen Betrag mit dem heutigen Datum in die Vermietungs-App. Teilzahlungen oder ein anderes Datum trägst du dort ein.</p>';
+}
+
+/* ---------- Benachrichtigungen (nur in der iPhone-App) ---------- */
+const NATIVE_N=()=>!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.nativeNotify);
+const nPost=o=>{ try{ window.webkit.messageHandlers.nativeNotify.postMessage(o); }catch(e){} };
+const ntf=()=>{ if(!hub.notify||typeof hub.notify!=='object') hub.notify={on:false,rent:true}; return hub.notify; };
+let nState='', nCount=null, nSig='';
+window.__notifyStatus=st=>{ nState=st; if(st==='granted'&&ntf().on) syncNotify(true); else if(tab==='set') render(true); };
+addEventListener('immo-installable',()=>{ if(tab==='set') render(true); });
+window.__notifyCount=n=>{ nCount=n; if(tab==='set') render(true); };
+function notifyItems(){
+  const items=icsItems().map(i=>({id:i.uid,date:i.date,t:ImmoCore.t(i.t),sub:ImmoCore.t(i.sub||''),warn:i.warn}));
+  if(ntf().rent){ const V=rd('vermietung-v1'), td=todayS();
+    if(V&&Array.isArray(V.tens)&&V.tens.some(t=>isActiveT(t,td))) for(let i=0;i<4;i++){ const m=addM(ymOf(td),i), d=m+'-04'; if(d>=td) items.push({id:'rent-'+m,date:d,t:ImmoCore.t('Mieteingang prüfen'),sub:ImmoCore.t('Sind alle Mieten für '+fmtYm(m)+' da? Offene Beträge in der Übersicht buchen.'),warn:0}); } }
+  return items;
+}
+function syncNotify(force){
+  if(!NATIVE_N()||!ntf().on||nState!=='granted') return;
+  const items=notifyItems(), sig=JSON.stringify(items); if(!force&&sig===nSig) return; nSig=sig;
+  nPost({action:'schedule',items});
+}
+function ntfCard(){
+  if(!NATIVE_N()) return '';
+  const n=ntf(); let h='<h2>Erinnerungen</h2><div class="card pad">';
+  if(nState==='denied') h+='<p style="margin:0 0 8px"><span class="pill p-bad">Vom iPhone blockiert</span></p><p class="note" style="margin:0">Erlaube Mitteilungen für die App unter iPhone-Einstellungen, Mitteilungen, dann hier erneut einschalten.</p>';
+  else if(n.on&&nState==='granted'){
+    h+=`<p style="margin:0 0 8px"><span class="pill p-good">Eingeschaltet</span>${nCount!==null?' <span class="note">'+nCount+' Erinnerung'+(nCount===1?'':'en')+' geplant</span>':''}</p><p class="note" style="margin:0 0 10px">Du bekommst um 9 Uhr eine Mitteilung am Tag einer Frist und vorab zur Vorwarnzeit, zum Beispiel 7 Tage vor einer Mieterhöhung oder 90 Tage vor Ende der Zinsbindung. Der Hub aktualisiert die Termine bei jedem Öffnen.</p>
+    <label class="fld" style="flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-size:14px"><input type="checkbox" data-act="ntfRent" ${n.rent?'checked':''} style="width:22px;height:22px"> Am 4. eines Monats: Mieteingang prüfen</label>
+    <div class="row-actions"><button class="btn small" data-act="ntfTest">Test in 5 Sekunden</button><button class="btn small danger" data-act="ntfOff">Ausschalten</button></div>`;
+  } else h+='<p style="margin:0 0 10px">Lass dich an Fristen und Termine erinnern, auch wenn die App geschlossen ist. Alles bleibt auf dem iPhone, es wird nichts übertragen.</p><div class="row-actions" style="margin:0"><button class="btn primary" data-act="ntfOn">Erinnerungen einschalten</button></div>';
+  return h+'</div>';
+}
+
+/* ---------- Automatisches Backup (nur in der iPhone-App) ---------- */
+const NATIVE_B=()=>!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.nativeBackup);
+const nbPost=o=>{ try{ window.webkit.messageHandlers.nativeBackup.postMessage(o); }catch(e){} };
+let ab=null, abDays=7;
+window.__abStatus=o=>{ ab=o; if(o&&o.days) abDays=o.days; let ch=false; if(o&&o.last&&o.last>(hub.lastBackup||0)){ hub.lastBackup=o.last; saveHub(); ch=true; } if(tab==='set'||ch) render(true); };
+const abWord=d=>d===1?'täglich':d===30?'monatlich':'wöchentlich';
+function abCard(){
+  if(!NATIVE_B()) return '';
+  const sel=`<label class="fld">Turnus<select data-abdays="1"><option value="1" ${abDays===1?'selected':''}>Täglich</option><option value="7" ${abDays===7?'selected':''}>Wöchentlich</option><option value="30" ${abDays===30?'selected':''}>Monatlich</option></select></label>`;
+  let h='<h3 class="sub3">Automatisch in einen Ordner</h3>';
+  if(ab&&ab.err) h+=`<div class="warn">${esc(ab.err)}</div>`;
+  if(ab&&ab.on){
+    h+=`<p style="margin:0 0 8px"><span class="pill p-good">Eingeschaltet</span></p><div class="kv" style="padding:6px 0;border:0"><div>Ordner<small>${esc(ab.folder||'')}</small></div></div><div class="kv" style="padding:6px 0;border:0"><div>Letztes Backup<small>${ab.last?new Date(ab.last).toLocaleString(ImmoCore.loc,{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'noch keins'}</small></div></div>${sel}
+    <div class="row-actions" style="margin:0"><button class="btn small primary" data-act="abNow">Jetzt sichern</button><button class="btn small" data-act="abChoose">Anderer Ordner</button><button class="btn small danger" data-act="abOff">Ausschalten</button></div>`;
+  } else {
+    h+=`<p style="margin:0 0 10px">Die App legt regelmäßig eine Sicherung aller Daten als Datei in einem Ordner ab, den du wählst, zum Beispiel in iCloud Drive. Dann sind deine Daten auch nach einem Gerätewechsel da.</p>${sel}<div class="row-actions" style="margin:0"><button class="btn primary" data-act="abChoose">Ordner wählen und einschalten</button></div>`;
+  }
+  return h+`<p class="note" style="margin:10px 0 0">iOS erlaubt keine Aufgaben nach Uhrzeit. Die App prüft deshalb beim Öffnen und Verlassen, ob der Turnus (${abWord(abDays)}) abgelaufen ist. Es bleiben die letzten 12 Sicherungen erhalten. </p>`;
+}
+
+/* ---------- App-Sperre mit Face ID (nur in der iPhone-App) ---------- */
+const NATIVE_L=()=>!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.nativeLock);
+const nlPost=o=>{ try{ window.webkit.messageHandlers.nativeLock.postMessage(o); }catch(e){} };
+let lk=null, lkDelay=60;
+window.__lockStatus=o=>{ lk=o; if(o&&[0,60,300].includes(o.delay)) lkDelay=o.delay; if(tab==='set') render(true); };
+function lockCard(){
+  if(!NATIVE_L()) return '';
+  const sel=`<label class="fld">Sperren nach<select data-lkdelay="1"><option value="0" ${lkDelay===0?'selected':''}>Sofort</option><option value="60" ${lkDelay===60?'selected':''}>1 Minute im Hintergrund</option><option value="300" ${lkDelay===300?'selected':''}>5 Minuten im Hintergrund</option></select></label>`;
+  let h='<h2>App-Sperre</h2><div class="card pad">';
+  if(lk&&lk.err) h+=`<div class="warn">${esc(lk.err)}</div>`;
+  if(lk&&lk.on) h+=`<p style="margin:0 0 8px"><span class="pill p-good">Eingeschaltet</span></p>${sel}<div class="row-actions" style="margin:0"><button class="btn small danger" data-act="lkOff">Ausschalten</button></div>`;
+  else h+=`<p style="margin:0 0 10px">Schütze Mieterdaten und Zahlungen. Die App entsperrt sich mit Face ID, ersatzweise mit dem Code deines iPhones.</p>${sel}<div class="row-actions" style="margin:0"><button class="btn primary" data-act="lkOn">Mit Face ID sperren einschalten</button></div>`;
+  return h+'<p class="note" style="margin:10px 0 0">Erinnerungen und das automatische Backup laufen auch bei gesperrter App weiter. Im App-Umschalter von iOS ist der Inhalt verdeckt.</p></div>';
+}
+
+/* Fokus über das Neuzeichnen hinweg halten: das Feld wird an seinen data-Attributen wiedererkannt. */
+function fKey(el){ if(!el||!el.matches||!el.matches('input,select,textarea')||!$('#app').contains(el)) return ''; return el.tagName+'|'+(el.id||'')+'|'+Object.keys(el.dataset).sort().map(k=>k+'='+el.dataset[k]).join('&'); }
+let rkT=null;
+/* Neuzeichnen nach einer Eingabe erst, wenn der Fokus beim nächsten Feld angekommen ist (iPhone schließt sonst die Tastatur). */
+function renderSoon(){ clearTimeout(rkT); rkT=setTimeout(()=>render(true),0); }
+function render(keep){ const y=keep?window.scrollY:0; const ae=keep?document.activeElement:null, fk=fKey(ae); let sel=null; try{ if(fk&&ae.selectionStart!=null) sel=[ae.selectionStart,ae.selectionEnd]; }catch(_){}
+  $('#app').innerHTML=tab==='fristen'&&window.PX?PX.fristView():tab==='home'?viewHome():tab==='miete'?viewMiete():tab==='obj'?viewObj():tab==='fin'?viewFin():viewSich(); foldify(); window.scrollTo(0,y);
+  if(fk){ const el=[...$('#app').querySelectorAll('input,select,textarea')].find(x=>fKey(x)===fk); if(el){ try{ el.focus({preventScroll:true}); if(sel&&el.setSelectionRange) el.setSelectionRange(el.value.length,el.value.length); }catch(_){} } }
+  try{ paintCovers(); if(tab==='home') countUp(); }catch(_){}
+  syncNotify(); }
+
+/* ---------- Backup ---------- */
+function reloadHub(){ try{ const h=JSON.parse(localStorage.getItem(HUBKEY)||'null'); if(h&&h.v===1) hub=Object.assign({v:1,urls:{},map:{},meta:{},notify:{on:false,rent:true},lastBackup:0},h); }catch(e){} }
+function markBackup(){ reloadHub(); hub.lastBackup=Date.now(); saveHub(); render(true); }
+let bkPhotos=0;
+/* Wiederherstellen: erst alles prüfen, dann schreiben. Scheitert ein Schreibvorgang, wird der alte Stand zurückgeschrieben. */
+function doRestore(txt){
+  let j; try{ j=JSON.parse(txt.trim()); }catch(e){ return 'Der Text ist kein gültiges Backup.'; }
+  if(!j||j.src!=='immobilien-hub'||!j.data||typeof j.data!=='object') return 'Das ist kein Backup aus dem Hub.';
+  const allowed=new Set(ImmoCore.BK_KEYS), keys=Object.keys(j.data).filter(k=>allowed.has(k)&&typeof j.data[k]==='string');
+  if(!keys.length&&!(Array.isArray(j.photos)&&j.photos.length)&&!(Array.isArray(j.docs)&&j.docs.length)) return 'Das Backup enthält keine Daten.';
+  for(const k of keys){ if(k==='immo-lang') continue; try{ JSON.parse(j.data[k]); }catch(e){ return 'Ein Eintrag im Backup ist beschädigt. Nichts wurde geändert.'; } }
+  const old={}; keys.forEach(k=>{ try{ old[k]=localStorage.getItem(k); }catch(e){ old[k]=null; } });
+  const langBefore=ImmoCore.langPref();
+  let n=0;
+  try{ for(const k of keys){ localStorage.setItem(k,j.data[k]); n++; } }
+  catch(e){ keys.forEach(k=>{ try{ if(old[k]==null) localStorage.removeItem(k); else localStorage.setItem(k,old[k]); }catch(_){} }); reloadHub(); return 'Speichern fehlgeschlagen, der Speicher ist voll. Der alte Stand bleibt erhalten.'; }
+  reloadHub();
+  return {n, photos:Array.isArray(j.photos)?j.photos:null, docs:Array.isArray(j.docs)?j.docs:null, langChanged:ImmoCore.langPref()!==langBefore};
+}
+function bkFileName(){ return 'immobilien-backup-'+ImmoCore.today()+'.json'; }
+/* Datei mit Fotos: über das Teilen-Menü (iPhone: „In Dateien sichern“), sonst als Download. */
+window.__shareDone=o=>{ if(o&&o.ok){ markBackup(); toast('Backup gesichert.'); } else if(o&&o.msg) toast(o.msg); };
+async function saveBackupFile(){
+  if(NATIVE_B()){ nbPost({action:'share'}); toast('Backup wird vorbereitet …'); return; }
+  const txt=await ImmoCore.backupText(true); if(!txt){ toast('Keine Daten zum Sichern gefunden.'); return; }
+  const name=bkFileName();
+  try{ const f=new File([txt],name,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){
+      try{ await navigator.share({files:[f],title:name}); markBackup(); toast('Backup gesichert.'); }
+      catch(e){ if(e&&e.name==='AbortError') toast('Nicht gesichert.'); else toast('Teilen nicht möglich, bitte Text kopieren.'); }
+      return; }
+  }catch(e){}
+  try{ const blob=new Blob([txt],{type:'application/json'}), a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); markBackup(); toast('Datei gespeichert.'); }
+  catch(err){ toast('Speichern als Datei nicht möglich, bitte Text kopieren.'); }
+}
+
+/* ---------- Ereignisse ---------- */
+window.addEventListener('pageshow',e=>{ if(e.persisted){ reloadHub(); render(true); } });
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b) return; const act=b.dataset.act;
+  if(act==='ics'){ const it=icsItems(); if(!it.length){ toast('Keine Termine gefunden.'); return; } ImmoCore.saveFile('immobilien-fristen.ics','text/calendar',ImmoCore.ics(it,'Immobilien Hub','Immobilien Fristen')).then(r=>{ if(r!=='abort') toast(it.length+' Termine bereit. Öffne die Datei, um sie im Kalender zu speichern.'); }); return; }
+  if(act==='foldall'){ document.querySelectorAll('details.fold').forEach(d=>{ d.open=b.dataset.v==='1'; }); return; }
+  if(act==='ntfOn'){ ntf().on=true; saveHub(); if(nState==='granted'){ syncNotify(true); render(true); } else nPost({action:'request'}); return; }
+  if(act==='ntfOff'){ ntf().on=false; saveHub(); nSig=''; nCount=null; nPost({action:'clear'}); render(true); toast('Erinnerungen ausgeschaltet.'); return; }
+  if(act==='ntfRent'){ ntf().rent=!!b.checked; saveHub(); syncNotify(); return; }
+  if(act==='ntfTest'){ nPost({action:'test'}); toast('Test unterwegs. Sperre das iPhone oder wechsle kurz weg.'); return; }
+  if(act==='verSug'){ const m=getM(objSel); if(!m) return; const id=b.dataset.id; linkApp(m,'ver',id); const st=appState('ver'); const x=st&&Array.isArray(st.objs)&&st.objs.find(y=>String(y.id)===String(id)); if(x&&!x.hubId){ x.hubId=m.id; wApp('ver',st); } toast('Mit der Wohnung verknüpft.'); render(true); return; }
+  if(act==='mietYear'){ mietYear=+b.dataset.v; render(true); return; }
+  if(act==='objFilter'){ ui['objFilter']=b.dataset.v; try{ localStorage.setItem(UIKEY,JSON.stringify(ui)); }catch(_){} if(tab!=='obj'||objSel){ tab='obj'; objSel=''; } render(); window.scrollTo(0,0); return; }
+  if(act==='objArch'){ const m=getM(objSel); if(!m) return; const u=undoHub(); if(b.dataset.v==='1'){ m.archived=Date.now(); } else { delete m.archived; } saveHub(); render(true); u(b.dataset.v==='1'?'Abgelegt. Du findest das Objekt unter „Abgelegt“.':'Zurückgeholt.'); return; }
+  if(act==='objOpen'){ objSel=b.dataset.id; objTab='ueb'; render(); window.scrollTo(0,0); return; }
+  if(act==='phAdd'){ const m=getM(b.dataset.id); if(!m) return; if(!Array.isArray(m.fin2)) m.fin2=[]; const L=m.fin2.length?m.fin2[m.fin2.length-1]:m; m.fin2.push({zins:+L.zins||0,tilg:+L.tilg||0,fix:+L.fix||10,ratebk:0}); saveHub(); render(true); return; }
+  if(act==='phDel'){ const m=getM(b.dataset.id); if(!m||!Array.isArray(m.fin2)) return; const u=undoHub(); m.fin2.splice(+b.dataset.i,1); saveHub(); u('Anschlussfinanzierung entfernt.'); render(true); return; }
+  if(act==='objTab'){ objTab=b.dataset.v; ui['objTab']=objTab; try{ localStorage.setItem(UIKEY,JSON.stringify(ui)); }catch(_){} render(); window.scrollTo(0,0); return; }
+  if(act==='objBack'){ objSel=''; render(); window.scrollTo(0,0); return; }
+  if(act==='objNew'){ const m=newMaster({}); saveHub(); objSel=m.id; render(); window.scrollTo(0,0); return; }
+  if(act==='objImport'){ const n=importObjs(); toast(n?n+' Objekt'+(n===1?'':'e')+' übernommen.':'Nichts Neues in den Apps gefunden.'); render(true); return; }
+  if(act==='objDel'){ const u=undoHub(); setTimeout(()=>u('Objekt entfernt.'),0); dropRefs(objSel); hub.objs=hObjs().filter(o=>o.id!==objSel); saveHub(); objSel=''; render(); window.scrollTo(0,0); toast('Objekt entfernt.'); return; }
+  if(act==='objUnlink'){ const m=getM(objSel); if(m&&m.links){ const u=undoHub(); setTimeout(()=>u('Verknüpfung gelöst.'),0); const app=b.dataset.app; delete m.links[app];
+    /* Kennung in der App ebenfalls entfernen, sonst bliebe die Zuordnung über hubId bestehen */
+    if(!AD[app].single){ const st=appState(app), arr=st&&(app==='ren'?st.projs:st.objs); if(Array.isArray(arr)&&arr.some(x=>x.hubId===m.id)){ arr.forEach(x=>{ if(x.hubId===m.id) delete x.hubId; }); wApp(app,st); } }
+    saveHub(); render(true); } return; }
+  if(act==='objPull'){ const m=getM(objSel); if(!m) return; const n=pullFrom(m,b.dataset.app); toast(n?n+' Wert'+(n===1?'':'e')+' ins Objekt übernommen.':'Nichts zu übernehmen.'); render(true); return; }
+  if(act==='objPush'){ const m=getM(objSel); if(!m) return; const n=pushTo(m,b.dataset.app); toast(n?n+' Wert'+(n===1?'':'e')+' an '+appDef(b.dataset.app).name+' übergeben.':'Nichts zu übergeben.'); render(true); return; }
+  if(act==='objPushAll'){ const m=getM(objSel); if(!m) return; const u=undoHub(); setTimeout(()=>u('Apps angeglichen.'),0); let n=0; AORDER.forEach(a=>{ n+=pushTo(m,a); }); toast(n+' Werte an die Apps übergeben.'); render(true); return; }
+  if(act==='objMoreVer'){ const m=getM(objSel); if(!m) return; const st=appState('ver'); if(!st||!Array.isArray(st.objs)){ toast('Vermietung ist noch leer.'); return; } const n=unitsOf(m).length+1, id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    st.objs.push({id,name:(m.name||'Objekt')+' – Wohnung '+n,adresse:m.adresse||'',qm:0,hubId:m.id}); if(wApp('ver',st)){ if(m.links&&m.links.cp){ hub.map=hub.map||{}; hub.map[id]=String(m.links.cp); saveHub(); } toast('Wohnung '+n+' angelegt. Trage die Fläche in der Vermietung ein.'); } render(true); return; }
+  if(act==='objCreate'){ const m=getM(objSel); if(!m) return; const id=createIn(b.dataset.app,m); if(id){ linkApp(m,b.dataset.app,id); toast(b.dataset.app==='ren'?'Wird beim nächsten Öffnen der Renovierung angelegt.':'In '+appDef(b.dataset.app).name+' angelegt.'); } render(true); return; }
+  if(act==='objSetCur'){ const m=getM(objSel); if(!m) return; const app=b.dataset.app, st=appState(app);
+    if(b.dataset.mode==='push'){ if(st&&!twice('cur'+app)) return; const base=st&&typeof st==='object'&&!Array.isArray(st)?st:{}; if(AD[app].hubTied) base.hubId=m.id; linkApp(m,app,'1'); const vals={}; Object.entries(AD[app].f).forEach(([k,af])=>{ if(!emptyV(m[k])) { base[af]=m[k]; if(app==='sc'&&k==='kalt') base.mieteMode='abs'; } }); if(wApp(app,base)) toast(appDef(app).name+' mit dem Objekt gefüllt.'); }
+    else { if(AD[app].hubTied){ const st2=appState(app); if(st2){ st2.hubId=m.id; wApp(app,st2); } } linkApp(m,app,'1'); const n=pullFrom(m,app,true); toast('Zugeordnet'+(n?', '+n+' Wert'+(n===1?'':'e')+' ins Objekt übernommen':'')+'.'); }
+    render(true); return; }
+  if(act==='lkOn'){ nlPost({action:'set',on:true,delay:lkDelay}); return; }
+  if(act==='lkOff'){ nlPost({action:'set',on:false}); return; }
+  if(act==='abChoose'){ nbPost({action:'choose',days:abDays}); return; }
+  if(act==='abNow'){ nbPost({action:'now'}); toast('Backup wird erstellt.'); return; }
+  if(act==='abOff'){ nbPost({action:'off'}); return; }
+  if(act==='tax'){ taxA=b.dataset.v==='1'; ui['taxA']=taxA; try{ localStorage.setItem(UIKEY,JSON.stringify(ui)); }catch(_){} render(true); return; }
+  if(act==='payNow'||act==='payAll'){ const V=rd('vermietung-v1'); if(!V){ toast('Keine Vermietungsdaten gefunden.'); return; }
+    const L=dueList(V), pick=act==='payAll'?L:[L[+b.dataset.i]].filter(Boolean); if(!pick.length){ render(true); return; }
+    const ids=pick.map(d=>bookPay(V,d.t,d.m,d.open)), sum=pick.reduce((a,d)=>a+d.open,0);
+    if(wV(V)){ refreshSummary(V); render(true); ImmoCore.haptic('success'); ImmoCore.undoToast((pick.length===1?'Gebucht: '+(pick[0].t.mieter||'Mieter')+', '+fmtYm(pick[0].m):pick.length+' Zahlungen gebucht')+', '+eur2(sum),()=>{ const W=rd('vermietung-v1'); if(W){ W.pays=(W.pays||[]).filter(p=>!ids.includes(p.id)); if(wV(W)) refreshSummary(W); } render(true); }); }
+    return; }
+  if(act==='undoPay'){ const V=rd('vermietung-v1'); if(V&&lastPay){ V.pays=(V.pays||[]).filter(p=>!lastPay.ids.includes(p.id)); if(wV(V)) refreshSummary(V); } lastPay=null; toast('Buchung zurückgenommen.'); render(true); return; }
+  if(act==='sheet'){ openSheet(b.dataset.v||'menu',tab==='obj'?objSel:''); return; }
+  if(act==='taskDone'){ const x=hItems().find(i=>i.id===b.dataset.id); if(!x) return; const u=undoHub(); x.done=Date.now(); saveHub(); render(true); u((x.kind==='termin'?'Termin':'Aufgabe')+' erledigt.'); return; }
+  if(act==='docOpen'){ docViewer(b.dataset.id); return; }
+  if(act==='docCover'){ const m=getM(objSel); if(!m) return; m.cover=b.dataset.id; saveHub(); render(true); toast('Als Titelbild gesetzt.'); return; }
+  if(act==='docDel'){ const id=b.dataset.id, d=(DOCS||[]).find(x=>x.id===id); ImmoCore.docs.del(id).then(x=>loadDocs().then(()=>{ render(true); ImmoCore.haptic('light'); ImmoCore.undoToast('Gelöscht: '+((d&&d.name)||'Dokument'),()=>{ ImmoCore.docs.restore(x).then(loadDocs).then(()=>render(true)); }); })); return; }
+  if(act==='taxYear'){ ui['taxYear']=+b.dataset.v; try{ localStorage.setItem(UIKEY,JSON.stringify(ui)); }catch(_){} render(true); return; }
+  if(act==='finSeg'){ ui['finSeg']=b.dataset.v; try{ localStorage.setItem(UIKEY,JSON.stringify(ui)); }catch(_){} render(true); return; }
+  if(act==='taxCopy'){ const m=getM(ui['finObj'])||hObjs()[0]; if(!m) return; const t=taxText(m), ok=()=>toast('Kopiert. Füge den Text in eine Mail ein.'); if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok,()=>toast('Kopieren nicht möglich.')); else toast('Kopieren nicht möglich.'); return; }
+  if(act==='tab'){ lastPay=null; tab=b.dataset.v; bkText=''; render(); window.scrollTo(0,0); return; }
+  if(act==='takeRent'){ const r=takeRent(b.dataset.id); if(r&&writeCp(r.cp)){ toast('Miete für „'+r.name+'“ übernommen.'); render(true); } return; }
+  if(act==='takeAll'){ const s=data().sum, cp=curCp(); if(!s||!cp||cp.example) return; let n=0;
+    [...new Set(s.mieten.map(m=>hub.map[String(m.oid)]).filter(Boolean))].forEach(sel=>{ const o=cp.objs.find(x=>String(x.id)===sel), a=rentAgg(s,sel); if(o&&Math.abs(r2(a.kalt+a.stell)-((+o.rent||0)+(+o.garage||0)))>=0.5){ applyRent(cp,s,sel); n++; } });
+    if(n&&writeCp(cp)) toast(n+' Miete'+(n===1?'':'n')+' übernommen.'); render(true); return; }
+  if(act==='mkbk'){ ImmoCore.backupText(false).then(t=>{ if(!t){ toast('Keine Daten zum Sichern gefunden.'); return; } bkText=t; render(true); toast('Backup erstellt. Jetzt kopieren oder speichern.'); }); ImmoCore.photosExport().then(l=>{ bkPhotos=l.length; if(bkText) render(true); },()=>{}); return; }
+  if(act==='mwCopy'){ const m=getM(b.dataset.id); const ad=(m&&(m.adresse||m.name))||''; if(!ad){ toast('Keine Adresse eingetragen.'); return; } const ok=()=>toast('Adresse kopiert.'); if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(ad).then(ok,ok); else ok(); return; }
+  if(act==='cpbk'){ const ta=$('#bk'); const done=()=>{ markBackup(); toast('Kopiert. Füge den Text an einem sicheren Ort ein.'); }; if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(bkText).then(done,()=>{ ta.select(); document.execCommand('copy'); done(); }); } else { ta.select(); document.execCommand('copy'); done(); } return; }
+  if(act==='dlbk'){ saveBackupFile(); return; }
+  if(act==='install'){ ImmoCore.install().then(ok=>{ if(ok) toast('ImmoHub wird installiert.'); render(true); }); return; }
+  if(act==='restore'){ const t=restoreFile?restoreFile.text:(($('#rs')&&$('#rs').value)||'').trim(); if(!t){ toast('Bitte zuerst den Backup-Text einfügen.'); return; } if(!twice('rs')) return; const r=doRestore(t); if(typeof r==='string'){ toast(r); return; } restoreText=''; restoreFile=null;
+    const fin=msg=>{ if(r.langChanged){ location.reload(); return; } render(); toast(msg); };
+    const docsP=r.docs&&r.docs.length?ImmoCore.docsImport(r.docs).then(loadDocs,()=>{}):Promise.resolve();
+    docsP.then(()=>{ if(r.photos&&r.photos.length){ ImmoCore.photosImport(r.photos).then(c=>fin(r.n+' Einträge und '+c+' Fotos wiederhergestellt. Apps neu öffnen.'),()=>fin(r.n+' Einträge wiederhergestellt. Die Fotos ließen sich nicht einspielen.')); }
+    else fin(r.n+' Einträge wiederhergestellt. Apps neu öffnen.'); });
+    return; }
+  if(act==='urlreset'){ hub.urls={}; saveHub(); render(true); toast('Standardadressen gesetzt.'); return; }
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset&&t.dataset.covfile){ const m=getM(t.dataset.covfile), f=t.files&&t.files[0]; if(!m||!f) return; if(!/^image\//.test(f.type||'')){ toast('Bitte ein Foto wählen.'); return; }
+    const old=m.cover, date=todayS();
+    ImmoCore.docs.add({obj:m.id,kind:'foto',name:'Titelbild '+(m.name||''),date,year:date.slice(0,4),amount:0},f).then(d=>{ m.cover=d.id; saveHub(); return loadDocs(); }).then(()=>{ render(true); ImmoCore.haptic('success');
+      ImmoCore.undoToast('Titelbild gesetzt.',()=>{ const id=m.cover; if(old) m.cover=old; else delete m.cover; saveHub(); ImmoCore.docs.del(id).then(loadDocs).then(()=>render(true)); }); },()=>toast('Speichern nicht möglich. Ist der Speicher voll?')); return; }
+  if(t.dataset&&t.dataset.lang!==undefined){ ImmoCore.setLang(t.value); return; }
+  if(t.dataset&&t.dataset.tx!==undefined){ const m=getM(ui['finObj'])||hObjs()[0]; if(!m) return; const k=t.dataset.tx; if(k==='kauf'){ if(ImmoCore.isDate(t.value)) m.kauf=t.value; else delete m.kauf; } else { const v=ImmoCore.parseDE(t.value,0); if(v>0) m[k]=v; else delete m[k]; } saveHub(); renderSoon(); return; }
+  if(t.dataset&&t.dataset.phase!==undefined){ const m=getM(t.dataset.phase); if(m){ if(t.value) m.phase=t.value; else delete m.phase; saveHub(); render(true); } return; }
+  if(t.dataset&&t.dataset.fo!==undefined){ ui['finObj']=t.value; try{ localStorage.setItem(UIKEY,JSON.stringify(ui)); }catch(_){} render(true); return; }
+  if(t.dataset&&t.dataset.ph!==undefined){ const m=getM(t.dataset.oid); if(m&&Array.isArray(m.fin2)&&m.fin2[+t.dataset.ph]){ m.fin2[+t.dataset.ph][t.dataset.pk]=PCT.has(t.dataset.pk)?parsePct(t.value):parseNum(t.value); saveHub(); renderSoon(); } return; }
+  if(t.dataset&&t.dataset.lkdelay!==undefined){ lkDelay=+t.value; if(lk&&lk.on) nlPost({action:'status',delay:lkDelay}); else render(true); return; }
+  if(t.dataset&&t.dataset.abdays!==undefined){ abDays=+t.value; if(ab&&ab.on) nbPost({action:'days',days:abDays}); else render(true); return; }
+  if(t.dataset&&t.dataset.mf!==undefined){ const m=getM(t.dataset.oid); if(m){ const k=t.dataset.mf, ty=MFT[k]; m[k]=ty==='text'?t.value.trim():(ty==='int'?Math.round(parseNum(t.value)):(PCT.has(k)?parsePct(t.value):parseNum(t.value)));
+    if(k==='rest'&&m.rest>0&&!ImmoCore.isDate(m.restDate)){ m.restDate=todayS(); toast('Stichtag auf heute gesetzt. Passe ihn an den Kontoauszug an.'); }
+    saveHub(); renderSoon(); } return; }
+  if(t.dataset&&t.dataset.objlink!==undefined){ const m=getM(objSel); if(m&&t.value){ const app=t.dataset.objlink; linkApp(m,app,t.value); const it=appItems(app).find(x=>String(x.id)===t.value); if(it&&!it.hubId){ /* Markierung, damit die Zuordnung stabil bleibt */ const st=appState(app); const arr=app==='ren'?st.projs:st.objs, x=arr.find(y=>String(y.id)===t.value); if(x){ x.hubId=m.id; wApp(app,st); } } const n=pullFrom(m,app); toast('Zugeordnet'+(n?', '+n+' leere oder abweichende Werte ins Objekt übernommen':'')+'.'); render(true); } return; }
+  if(t.dataset&&t.dataset.objsel!==undefined){ objSel=t.value; ui['objSel']=objSel; try{ localStorage.setItem(UIKEY,JSON.stringify(ui)); }catch(_){} render(); return; }
+  if(t.dataset&&t.dataset.meta!==undefined){ const m=reMeta(), id=String(t.dataset.cid); m[id]=m[id]||{}; if(t.value) m[id][t.dataset.meta]=t.value; else delete m[id][t.dataset.meta]; saveHub(); render(true); return; }
+  if(t.dataset&&t.dataset.map!==undefined){ if(t.value) hub.map[t.dataset.map]=t.value; else hub.map[t.dataset.map]=''; saveHub(); render(true); return; }
+  if(t.id==='rsf'&&t.files&&t.files[0]){ const rdr=new FileReader(); const fn=t.files[0].name; rdr.onload=()=>{ restoreFile={name:fn,text:String(rdr.result||'')}; restoreText=''; render(true); toast('Datei geladen. Jetzt „Wiederherstellen“ tippen.'); }; rdr.readAsText(t.files[0]); }
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset&&t.dataset.url){ const a=APPS.find(x=>x.id===t.dataset.url); const v=t.value.trim(); if(v&&v!==a.url) hub.urls[a.id]=v; else delete hub.urls[a.id]; saveHub(); }
+  if(t.id==='rs') restoreText=t.value;
+  if(t.id==='hsearch'){ searchQ=t.value; const r=$('#hsres'); if(r) r.innerHTML=searchQ.trim().length>=2?searchHtml(searchQ):''; }
+});
+if(NATIVE_N()) nPost({action:'status'});
+if(NATIVE_B()) nbPost({action:'status'});
+if(NATIVE_L()) nlPost({action:'status'});
+/* ================= Ausbau A–F: Übersicht, Erfassen, Unterlagen, Steuerjahr, Verlauf ================= */
+let DOCS=null, searchQ='', sheet=null;
+function loadDocs(){ return ImmoCore.docs.list().then(l=>{ DOCS=l; return l; },()=>{ DOCS=[]; return []; }); }
+const docsOf=id=>(DOCS||[]).filter(d=>d.obj===id);
+const hItems=()=>{ if(!Array.isArray(hub.items)) hub.items=[]; return hub.items; };
+const nid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function todayLong(){ try{ return new Date().toLocaleDateString(ImmoCore.loc,{weekday:'long',day:'numeric',month:'long'}); }catch(e){ return 'Heute'; } }
+const signedEur=v=>(v>=0?'+':'−')+eur(Math.abs(v));
+/* Rückgängig: Stand aller App-Daten merken, nach der Änderung Hinweis zeigen */
+function undoHub(){ const snap=ImmoCore.snap(); return msg=>{ ImmoCore.haptic('light'); ImmoCore.undoToast(msg,()=>{ ImmoCore.restoreSnap(snap); reloadHub(); render(true); }); }; }
+
+/* ---- Vermögensverlauf (Paket E) ---- */
+function owned(m,S){ return !m.archived&&phaseOf(m,S).i>=2; }
+function balAt(pl,ym){ if(!pl||!pl.rows||!pl.rows.length) return 0; if(ym<pl.rows[0].ym) return pl.start; const r=pl.rows.find(x=>x.ym===ym); return r?r.bal:0; }
+function eqOfObjs(objs,ym){ return objs.reduce((a,m)=>{ const v=+m.mw||+m.kp||0, pl=planOf(m); let d=0; if(pl) d=balAt(pl,ym); else { const cb=ImmoCore.currentBalance(m); d=cb?cb.now:0; } return a+v-d; },0); }
+function equitySeries(objs){ const cur=ymOf(todayS()), out=[]; for(let i=12;i>=0;i--){ const ym=addM(cur,-i), st=hub.vh&&hub.vh[ym]; out.push(st&&st.h&&ym<cur&&isFinite(st.e)?st.e:eqOfObjs(objs,ym)); } return out; }
+function recordVh(e,v,d){ const ym=ymOf(todayS()); if(!hub.vh||typeof hub.vh!=='object') hub.vh={}; const o=hub.vh[ym]; const r={e:Math.round(e),v:Math.round(v),d:Math.round(d),h:1}; if(!o||!o.h||o.e!==r.e||o.v!==r.v){ hub.vh[ym]=r; const ks=Object.keys(hub.vh).sort(); while(ks.length>60) delete hub.vh[ks.shift()]; saveHub(); } }
+function sparkPath(vals,w,hgt){ const mn=Math.min(...vals), mx=Math.max(...vals), rg=mx-mn||1; return vals.map((v,i)=>(i?'L':'M')+(i*w/(vals.length-1)).toFixed(1)+','+(hgt-3-(v-mn)/rg*(hgt-6)).toFixed(1)).join(''); }
+function heroCard(D,S){ const A=hObjs().filter(m=>owned(m,S)); if(!A.length) return '';
+  /* Die ganze Karte zählt nur den Bestand: Objekte in „Halten“ oder „Verbessern“. Objekte im Kauf erscheinen nur in der Aufschlüsselung. */
+  const O=A.filter(m=>phaseOf(m,S).i>=3);
+  let val=0,debt=0,pay=0,rent=0; const MR=[];
+  A.forEach(m=>{ const cb=ImmoCore.currentBalance(m), inB=phaseOf(m,S).i>=3; if(inB){ val+=+m.mw||+m.kp||0; if(cb) debt+=cb.now; }
+    /* Miete − Rate zählt nur Objekte in „Halten“ oder „Verbessern“ mit tatsächlichen Mietern. Objekte im Kauf (noch kein Mieter) werden nur aufgelistet. */
+    const ph=phaseOf(m,S).i, g=verAgg(m), held=ph>=3&&g&&g.n>0, r=held?g.k:0, p=cb?cb.pay:0;
+    const src=held?(g.n===1?'1 Mietverhältnis':g.n+' Mietverhältnisse'):(ph<3?'Im Kauf, noch kein Mieter – in keiner Kennzahl eingerechnet':'Keine Miete hinterlegt, nicht eingerechnet');
+    if(held){ rent+=r; pay+=p; } MR.push({m,r,p,src,inc:held}); });
+  const eq=val-debt; if(O.length) recordVh(eq,val,debt);
+  const ser=O.length?equitySeries(O):[0,0]; ser[ser.length-1]=eq; const d12=ser[ser.length-1]-ser[0], off=D.sum?D.sum.arrears:0, mr=rent-pay;
+  return `<div class="ui-hero" role="group" aria-label="Kernzahlen" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div><div class="l">Eigenkapital im Bestand</div><div class="v" data-count="${Math.round(eq)}">${eur(eq)}</div></div>${O.length?`<span class="ui-pill" style="background:rgba(126,226,168,.16);color:${d12>=0?'#7ee2a8':'#ffb4ad'}">${signedEur(d12)} in 12 M.</span>`:''}</div>
+    <svg viewBox="0 0 300 40" preserveAspectRatio="none" aria-hidden="true"><path d="${sparkPath(ser,300,40)}" fill="none" stroke="#7ee2a8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>
+    <div class="split"><div><span class="l">Miete − Rate</span><b class="${mr>=0?'up':'dn'}">${signedEur(mr)}</b></div><div><span class="l">Offen</span><b class="${off>0.5?'dn':''}">${eur(off)}</b></div><div><span class="l">Beleihung</span><b>${val>0?nf(debt/val*100,0)+' %':'–'}</b></div></div></div>
+    <p class="note" style="margin:6px 4px 0">Marktwert (oder Kaufpreis) minus Restschuld der Objekte in „Halten“ oder „Verbessern“. Objekte im Kauf zählen erst mit dem ersten Mieter. Der Verlauf folgt der Tilgung, Marktwerte werden ab jetzt monatlich gemerkt.</p>
+    <details class="ui-card mrd"><summary>So setzen sich die Zahlen zusammen</summary>
+    <p class="note" style="margin:4px 0 8px">Alle Kennzahlen zählen nur Objekte in „Halten“ oder „Verbessern“. Miete − Rate: Kaltmiete plus Stellplatz im laufenden Monat minus aktuelle monatliche Darlehensrate (Zins und Tilgung). Nebenkosten, Rücklagen und Steuern sind nicht enthalten.</p>
+    ${MR.map(x=>`<div class="kv"><div>${esc(x.m.name||'Objekt')}<small>${esc(x.src)}</small></div><span class="mono" style="text-align:right;white-space:nowrap">${x.inc?`${eur(x.r)} − ${eur(x.p)}<br><b class="${x.r-x.p>=0?'up':'dn'}">${signedEur(x.r-x.p)}</b>`:`Rate ${eur(x.p)}`}</span></div>`).join('')}
+    <div class="kv"><div><b>Summe</b></div><span class="mono" style="text-align:right"><b class="${mr>=0?'up':'dn'}">${signedEur(mr)}</b></span></div></details>`; }
+function countUp(){ const e=document.querySelector('.ui-hero .v[data-count]'); if(!e) return; let done=false; try{ done=sessionStorage.getItem('heroCount')==='1'; sessionStorage.setItem('heroCount','1'); }catch(_){}
+  if(done||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)) return; const to=+e.dataset.count, t0=performance.now();
+  const step=t=>{ const k=Math.min(1,(t-t0)/650), v=to*(1-Math.pow(1-k,3)); e.textContent=eur(v); if(k<1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+
+/* ---- Liste „Heute“ (Paket B) ---- */
+function todayRows(D,S){ const td=todayS(), rows=[], add14=ImmoCore.addMonths(td,0), in14=new Date(Date.now()+14*864e5), in90=ImmoCore.addMonths(td,3);
+  const V=D.ver; if(V){ dueList(V).forEach((d,i)=>rows.push({date:d.m+'-01',over:d.late,ic:'€',col:d.late?'var(--bad)':'var(--mid)',t:'Miete '+fmtYm(d.m)+' · '+(d.t.mieter||'Mieter'),s:d.unit.replace(/^Beispiel:\s*/,'')+' · '+eur2(d.open)+(d.late?' offen':' fällig bis zum 3.'),act:`<button class="act" data-act="payNow" data-i="${i}">Gebucht</button>`,sw:`<button data-act="payNow" data-i="${i}">Gebucht</button>`})); }
+  if(D.bes&&Array.isArray(D.bes.objs)){ const bu=urlOf(appDef('bes')); D.bes.objs.forEach(o=>{ if(!o.termin) return; const d=new Date(o.termin); if(isNaN(d)||d.getTime()<Date.now()-36e5||d>in14) return;
+    rows.push({date:ImmoCore.localIso(d).slice(0,10),ic:String(d.getDate()),col:'var(--c-bes)',t:'Besichtigung '+d.toLocaleTimeString(ImmoCore.loc,{hour:'2-digit',minute:'2-digit'}),s:(o.titel||o.adresse||'')+' · '+d.toLocaleDateString(ImmoCore.loc,{weekday:'short',day:'2-digit',month:'2-digit'}),act:`<a class="act" href="${esc(bu+'#/o/'+o.id+'/daten')}">Öffnen</a>`}); }); }
+  if(D.sum&&Array.isArray(D.sum.dl)){ const vu=urlOf(appDef('ver')); D.sum.dl.forEach(d=>{ if(d.t&&(/^Rückstand/.test(d.t)||/möglich/.test(d.t))) return; rows.push({date:d.date,over:d.state==='over',ic:'!',col:d.state==='over'?'var(--bad)':'var(--mid)',t:d.t,s:d.sub||'',act:`<a class="act" href="${esc(vu)}">Öffnen</a>`}); }); }
+  icsItems().filter(x=>/^cp-/.test(x.uid)&&x.date<=in90).forEach(x=>rows.push({date:x.date,ic:'%',col:'var(--c-cp)',t:x.t,s:fmtD(x.date)+' · '+(x.sub||''),act:`<button class="act" data-act="tab" data-v="fin">Ansehen</button>`}));
+  hItems().filter(x=>!x.done&&x.date&&(x.date<=ImmoCore.addMonths(td,0)||new Date(x.date+'T00:00:00')<=in14)).forEach(x=>{ const m=getM(x.obj);
+    rows.push({date:x.date,over:x.date<td,ic:x.kind==='termin'?String(+x.date.slice(8,10)):'✓',col:x.kind==='termin'?'var(--c-hub)':(x.date<td?'var(--bad)':'var(--none)'),t:(x.kind==='termin'?(x.time?x.time+' · ':''):'')+x.text,s:(m?m.name+' · ':'')+fmtD(x.date),act:`<button class="act" data-act="taskDone" data-id="${esc(x.id)}">Erledigt</button>`,sw:`<button data-act="taskDone" data-id="${esc(x.id)}">Erledigt</button>`}); });
+  if(window.PX) PX.todayRows().forEach(r=>rows.push(r));
+  return rows.sort((a,b)=>(b.over?1:0)-(a.over?1:0)||(a.date<b.date?-1:a.date>b.date?1:0)); }
+const rowHtml=r=>`<div class="ui-trow">${r.sw?`<div class="bk" aria-hidden="true">${r.sw.replace('<button ','<button tabindex="-1" ')}</div>`:''}<div class="in"${r.sw?' data-sw="1"':''}><span class="ic" style="background:${r.col}">${esc(r.ic)}</span><span class="tx"><span class="t">${esc(r.t)}</span><br><span class="s">${esc(r.s)}</span></span>${r.act||''}</div></div>`;
+/* Wischen nach links zeigt die Aktion (wie in Mail) */
+(function(){ let el=null,x0=0,y0=0,dx=0,lock=0;
+  document.addEventListener('touchstart',e=>{ const t=e.target.closest('.ui-trow .in[data-sw]'); document.querySelectorAll('.ui-trow .in.open').forEach(x=>{ if(x!==t){ x.classList.remove('open'); x.style.transform=''; } }); if(!t) return; el=t; x0=e.touches[0].clientX; y0=e.touches[0].clientY; dx=0; lock=0; },{passive:true});
+  document.addEventListener('touchmove',e=>{ if(!el) return; const x=e.touches[0].clientX-x0, y=e.touches[0].clientY-y0; if(!lock) lock=Math.abs(x)>Math.abs(y)+4?1:(Math.abs(y)>8?2:0); if(lock!==1) return; const w=(el.previousElementSibling&&el.previousElementSibling.offsetWidth)||100; dx=Math.max(-w,Math.min(0,x+(el.classList.contains('open')?-w:0))); el.style.transition='none'; el.style.transform='translateX('+dx+'px)'; },{passive:true});
+  document.addEventListener('touchend',()=>{ if(!el) return; const w=(el.previousElementSibling&&el.previousElementSibling.offsetWidth)||100; el.style.transition=''; if(lock===1&&dx<-w*0.5){ el.style.transform='translateX(-'+w+'px)'; el.classList.add('open'); } else if(lock===1){ el.style.transform=''; el.classList.remove('open'); } el=null; });
+})();
+
+/* ---- Objekt-Karussell und Titelbilder (Pakete B, C) ---- */
+function carousel(S){ const O=hObjs().filter(m=>!m.archived); if(!O.length) return '';
+  return '<h2>Objekte</h2><div class="ui-carousel">'+O.map(m=>{ const st=stageOf(m,S), cp=(S.cp||{})[m.id], cb=ImmoCore.currentBalance(m);
+    const g=verAgg(m), rent=g&&g.n?g.k:(+m.kalt||0), v=cp?cp.v+' /Mon.':(cb&&rent?signedEur(rent-cb.pay)+' /Mon.':(rent?eur(rent)+' Miete':(+m.kp?eur(+m.kp):'')));
+    return `<button type="button" class="ui-oc" data-act="objOpen" data-id="${esc(m.id)}"><span class="img" data-cover="${esc(m.id)}" style="display:block"><i>${esc(st.p[0][0])}</i></span><span class="b"><b translate="no">${esc(m.name||'Objekt')}</b><span>${esc(v)}</span></span></button>`; }).join('')+'</div>'; }
+const coverCache={};
+function coverURL(m){ const key=m.id+'|'+(m.cover||''); if(key in coverCache) return Promise.resolve(coverCache[key]);
+  const d=m.cover&&(DOCS||[]).find(x=>x.id===m.cover);
+  const p=d&&d.thumb?Promise.resolve(d.thumb):(()=>{ const r=resolve(m,'bes'); return r?ImmoCore.besPhoto(r.id):Promise.resolve(null); })();
+  return p.then(b=>{ const u=b?URL.createObjectURL(b):''; coverCache[key]=u; return u; },()=>''); }
+function paintCovers(){ document.querySelectorAll('[data-cover]').forEach(el=>{ const m=getM(el.dataset.cover); if(!m) return; coverURL(m).then(u=>{ if(u) el.style.backgroundImage='url("'+u+'")'; }); });
+  document.querySelectorAll('[data-dthumb]').forEach(el=>{ const d=(DOCS||[]).find(x=>x.id===el.dataset.dthumb); if(d&&d.thumb){ el.style.backgroundImage='url("'+URL.createObjectURL(d.thumb)+'")'; el.textContent=''; } }); }
+
+/* ---- Suche (Paket B) ---- */
+function searchHtml(q){ const n=x=>String(x||'').toLowerCase(), Q=n(q).trim(); if(Q.length<2) return ''; const R=[];
+  hObjs().forEach(m=>{ if(n(m.name).includes(Q)||n(m.adresse).includes(Q)) R.push(`<button type="button" class="ui-trow" data-act="objOpen" data-id="${esc(m.id)}" style="width:100%;border:0;background:none;text-align:left;font:inherit;color:inherit;padding:0"><span class="in"><span class="ic" style="background:var(--c-hub)">⌂</span><span class="tx"><span class="t" translate="no">${esc(m.name||'Objekt')}</span><br><span class="s">Objekt${m.adresse?' · '+esc(m.adresse):''}</span></span></span></button>`); });
+  const V=rd('vermietung-v1'), vu=urlOf(appDef('ver')); ((V&&V.tens)||[]).forEach(t=>{ const o=(V.objs||[]).find(x=>x.id===t.objId)||{}; if(n(t.mieter).includes(Q)||n(o.name).includes(Q)) R.push(`<a class="ui-trow" href="${esc(vu+'#/t/'+t.id)}" style="display:block;color:inherit;text-decoration:none"><span class="in"><span class="ic" style="background:var(--c-ver)">☺</span><span class="tx"><span class="t" translate="no">${esc(t.mieter||'Mieter')}</span><br><span class="s">Mieter · <span translate="no">${esc(o.name||'')}</span></span></span></span></a>`); });
+  hItems().forEach(x=>{ if(n(x.text).includes(Q)) R.push(`<button type="button" class="ui-trow" data-act="objOpen" data-id="${esc(x.obj)}" style="width:100%;border:0;background:none;text-align:left;font:inherit;color:inherit;padding:0"><span class="in"><span class="ic">✓</span><span class="tx"><span class="t">${esc(x.text)}</span><br><span class="s">${x.kind==='termin'?'Termin':'Aufgabe'}${x.date?' · '+fmtD(x.date):''}</span></span></span></button>`); });
+  (DOCS||[]).forEach(d=>{ if(n(d.name).includes(Q)||n(ImmoCore.docKindName(d.kind)).includes(Q)) R.push(`<button type="button" class="ui-trow" data-act="objOpen" data-id="${esc(d.obj)}" style="width:100%;border:0;background:none;text-align:left;font:inherit;color:inherit;padding:0"><span class="in"><span class="ic">▤</span><span class="tx"><span class="t">${esc(d.name||'Dokument')}</span><br><span class="s">${esc(ImmoCore.docKindName(d.kind))}${d.date?' · '+fmtD(d.date):''}</span></span></span></button>`); });
+  return '<div class="ui-card ui-today" style="margin:6px 0 4px">'+(R.length?R.slice(0,12).join(''):'<p class="note" style="margin:0">Nichts gefunden.</p>')+'</div>'; }
+
+/* ---- Erfassen-Blatt (Paket A) ---- */
+function sheetObjSel(id,cur){ const O=hObjs().filter(m=>!m.archived); return `<label class="ui-field">Objekt<select id="${id}">${O.length?'':'<option value="">– noch kein Objekt –</option>'}${O.map(m=>`<option value="${esc(m.id)}" ${m.id===cur?'selected':''}>${esc(m.name||'Objekt')}</option>`).join('')}</select></label>`; }
+function payCands(objId){ const V=rd('vermietung-v1'); if(!V) return []; const m=objId&&getM(objId), ids=m?new Set(verIds(m)):null, td=todayS(), ym=ymOf(td);
+  let L=dueList(V).map(d=>({t:d.t,m:d.m,b:d.open,u:d.unit}));
+  (V.tens||[]).filter(t=>isActiveT(t,td)&&!L.some(x=>x.t.id===t.id)).forEach(t=>{ const so=soll(t,ym); if(so) L.push({t,m:ym,b:r2(so.total),u:((V.objs||[]).find(x=>x.id===t.objId)||{}).name||'Wohnung'}); });
+  if(ids&&ids.size) L=L.filter(x=>ids.has(String(x.t.objId))); return L; }
+function sheetHtml(){ if(!sheet) return ''; const S=sheet, m=S.obj&&getM(S.obj), nm=m?' <span>für</span> <span translate="no">'+esc(m.name||'Objekt')+'</span>':''; let h='';
+  if(S.mode==='menu') h=`<h3>Erfassen${nm}</h3><div class="ui-qa"><button type="button" data-sa="pay" style="--c:var(--c-ver)"><i>€</i>Zahlung</button><button type="button" data-sa="beleg"><i>▤</i>Beleg</button><button type="button" data-sa="termin" style="--c:var(--c-bes)"><i>◷</i>Termin</button><button type="button" data-sa="aufgabe" style="--c:var(--none)"><i>✓</i>Aufgabe</button><button type="button" data-sa="inserat" style="--c:var(--c-sc)"><i>⌂</i>Inserat</button><button type="button" data-px="bank" style="--c:var(--c-ver)"><i>⇣</i>Kontoauszug</button></div>`;
+  if(S.mode==='pay'){ const L=payCands(S.obj); S.cands=L; const k=S.pick||0, c=L[k];
+    h=`<h3>Zahlung${nm}</h3>`+(L.length?`<div class="ui-chips">${L.map((x,i)=>`<button type="button" data-sa="pick" data-i="${i}" aria-pressed="${i===k}"><span translate="no">${esc(x.t.mieter||'Mieter')}</span> · ${esc(fmtYm(x.m))}</button>`).join('')}</div>
+      <label class="ui-field">Betrag<input class="big" id="sp_amt" inputmode="decimal" value="${c?esc(nf(c.b,2)):''}"></label><div class="ui-row2"><label class="ui-field">Für Monat<input type="month" id="sp_mon" value="${c?c.m:ymOf(todayS())}"></label><label class="ui-field">Eingang am<input type="date" id="sp_dat" value="${todayS()}"></label></div>
+      <button type="button" class="ui-btn primary wide" data-sa="paySave" style="--c:var(--c-ver)">Buchen</button>`:'<div class="ui-empty"><b>Keine Mieter gefunden</b>Lege Mieter in der Vermietung an oder ordne die Wohnung unter Objekte → Apps zu.</div>'); }
+  if(S.mode==='termin') h=`<h3>Termin${nm}</h3><label class="ui-field">Was<input id="st_txt" placeholder="z. B. Handwerker Bad, Eigentümerversammlung"></label><div class="ui-row2"><label class="ui-field">Datum<input type="date" id="st_date" value="${todayS()}"></label><label class="ui-field">Uhrzeit<input type="time" id="st_time" value="10:00"></label></div>${sheetObjSel('st_obj',S.obj)}<button type="button" class="ui-btn primary wide" data-sa="itemSave" data-k="termin">Speichern</button>`;
+  if(S.mode==='aufgabe') h=`<h3>Aufgabe oder Notiz${nm}</h3><label class="ui-field">Text<textarea id="st_txt" rows="3" placeholder="z. B. Rauchmelder prüfen lassen"></textarea></label><label class="ui-field">Fällig am (optional)<input type="date" id="st_date"></label>${sheetObjSel('st_obj',S.obj)}<button type="button" class="ui-btn primary wide" data-sa="itemSave" data-k="aufgabe">Speichern</button>`;
+  if(S.mode==='beleg') h=`<h3>Beleg oder Dokument${nm}</h3><label class="ui-field">Datei (Foto oder PDF)<input type="file" id="sb_file" accept="image/*,application/pdf"></label><div class="ui-row2"><label class="ui-field">Art<select id="sb_kind">${ImmoCore.DOCKINDS.map(k=>`<option value="${k[0]}">${k[1]}</option>`).join('')}</select></label><label class="ui-field">Betrag brutto<input id="sb_amt" inputmode="decimal" placeholder="nur bei Kosten"></label></div><div class="ui-row2"><label class="ui-field">Datum<input type="date" id="sb_date" value="${todayS()}"></label><label class="ui-field">Bezeichnung<input id="sb_name" placeholder="aus dem Dateinamen"></label></div>${sheetObjSel('sb_obj',S.obj)}<button type="button" class="ui-btn primary wide" data-sa="belegSave">Speichern</button><p class="note" style="margin:0">Rechnungen, Betriebskosten und Verwaltungskosten mit Betrag fließen ins Steuerjahr des Objekts.</p>`;
+  if(S.mode==='inserat') h=S.made?`<h3>Objekt angelegt</h3><p>„<span translate="no">${esc((getM(S.made)||{}).name||'')}</span>“ steht in der Phase Suchen. Prüfe es jetzt im Schnellcheck.</p><button type="button" class="ui-btn primary wide" data-sa="toSc" style="--c:var(--c-sc)">Im Schnellcheck prüfen</button><button type="button" class="ui-btn wide" data-sa="toObj">Objekt ansehen</button>`
+    :`<h3>Inserat prüfen</h3><label class="ui-field">Name oder Adresse<input id="si_name" placeholder="z. B. Gartenstr. 12, Reutlingen"></label><div class="ui-row2"><label class="ui-field">Kaufpreis<input id="si_kp" inputmode="decimal"></label><label class="ui-field">Wohnfläche m²<input id="si_qm" inputmode="decimal"></label></div><div class="ui-row2"><label class="ui-field">Kaltmiete/Monat<input id="si_kalt" inputmode="decimal" placeholder="falls vermietet"></label><label class="ui-field">Baujahr<input id="si_bj" inputmode="numeric"></label></div><label class="ui-field">Link zum Inserat<input id="si_link" inputmode="url" autocapitalize="off" placeholder="https://…"></label><button type="button" class="ui-btn primary wide" data-sa="inseratSave" style="--c:var(--c-sc)">Anlegen</button>`;
+  return `<div class="ui-dim" data-sa="close"></div><div class="ui-sheet" role="dialog" aria-modal="true" aria-label="Erfassen"><div class="grab"></div>${h}<button type="button" class="ui-btn wide" data-sa="${S.mode==='menu'||S.made?'close':'back'}">${S.mode==='menu'||S.made?'Schließen':'Zurück'}</button></div>`; }
+function openSheet(mode,obj){ sheet={mode:mode||'menu',obj:obj||(tab==='obj'?objSel:'')||''}; drawSheet(); ImmoCore.haptic('light'); }
+function drawSheet(){ let host=$('#sheetHost'); if(!host){ host=document.createElement('div'); host.id='sheetHost'; document.body.appendChild(host); } host.innerHTML=sheetHtml(); const f=host.querySelector('input:not([type=file]):not([type=date]):not([type=month]):not([type=time]),textarea'); if(f&&sheet&&sheet.mode!=='menu'&&sheet.mode!=='pay') try{ f.focus({preventScroll:true}); }catch(_){} }
+function closeSheet(){ sheet=null; const host=$('#sheetHost'); if(host) host.innerHTML=''; }
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-sa]'); if(!b||!sheet) return; const a=b.dataset.sa, val=id=>{ const x=$('#'+id); return x?x.value.trim():''; };
+  if(a==='close'){ closeSheet(); return; }
+  if(a==='back'){ sheet.mode='menu'; sheet.pick=0; drawSheet(); return; }
+  if(['pay','beleg','termin','aufgabe','inserat'].includes(a)){ sheet.mode=a; sheet.pick=0; drawSheet(); return; }
+  if(a==='pick'){ sheet.pick=+b.dataset.i; drawSheet(); return; }
+  if(a==='paySave'){ const c=(sheet.cands||[])[sheet.pick||0], V=rd('vermietung-v1'); const amt=ImmoCore.parseDE(val('sp_amt'),0), mon=val('sp_mon'), dat=val('sp_dat')||todayS(); if(!c||!V||!(amt>0)||!/^\d{4}-\d{2}$/.test(mon)){ toast('Bitte Mieter, Betrag und Monat prüfen.'); return; }
+    const t=(V.tens||[]).find(x=>x.id===c.t.id); if(!t) return; const id=bookPay(V,t,mon,r2(amt)); const p=V.pays.find(x=>x.id===id); if(p) p.datum=dat;
+    if(wV(V)){ refreshSummary(V); closeSheet(); render(true); ImmoCore.haptic('success'); ImmoCore.undoToast('Zahlung gebucht: '+(t.mieter||'Mieter')+', '+eur2(amt),()=>{ const W=rd('vermietung-v1'); if(W){ W.pays=(W.pays||[]).filter(x=>x.id!==id); if(wV(W)) refreshSummary(W); } render(true); }); } return; }
+  if(a==='itemSave'){ const txt=val('st_txt'), k=b.dataset.k; if(!txt){ toast('Bitte einen Text eingeben.'); return; } if(k==='termin'&&!ImmoCore.isDate(val('st_date'))){ toast('Bitte ein Datum wählen.'); return; }
+    const it={id:nid('i'),kind:k,obj:val('st_obj'),text:txt,date:ImmoCore.isDate(val('st_date'))?val('st_date'):'',time:k==='termin'?val('st_time'):'',done:false,ts:Date.now()}; const u=undoHub(); hItems().push(it); saveHub(); closeSheet(); render(true); u(k==='termin'?'Termin gespeichert.':'Aufgabe gespeichert.'); return; }
+  if(a==='belegSave'){ const fi=$('#sb_file'), f=fi&&fi.files&&fi.files[0], obj=val('sb_obj'); if(!f){ toast('Bitte eine Datei wählen.'); return; } if(!obj){ toast('Bitte zuerst ein Objekt anlegen.'); return; }
+    const kind=val('sb_kind'), amt=ImmoCore.parseDE(val('sb_amt'),0), date=ImmoCore.isDate(val('sb_date'))?val('sb_date'):todayS();
+    const meta={obj,kind,name:val('sb_name')||f.name.replace(/\.[^.]+$/,''),date,year:date.slice(0,4),amount:ImmoCore.docIsCost(kind)&&amt>0?r2(amt):0};
+    b.disabled=true; ImmoCore.docs.add(meta,f).then(d=>loadDocs().then(()=>{ closeSheet(); render(true); ImmoCore.haptic('success'); ImmoCore.undoToast('Gespeichert: '+d.name,()=>{ ImmoCore.docs.del(d.id).then(loadDocs).then(()=>render(true)); }); }),()=>{ b.disabled=false; toast('Speichern nicht möglich. Ist der Speicher voll?'); }); return; }
+  if(a==='inseratSave'){ const name=val('si_name'); if(!name){ toast('Bitte Name oder Adresse eingeben.'); return; } const num=id=>ImmoCore.parseDE(val(id),0);
+    const m=newMaster({name,adresse:/\d/.test(name)?name:'',kp:num('si_kp'),qm:num('si_qm'),kalt:num('si_kalt'),bj:Math.round(num('si_bj'))}); if(val('si_link')) m.link=val('si_link'); saveHub(); sheet.made=m.id; drawSheet(); render(true); return; }
+  if(a==='toObj'){ const id=sheet.made; closeSheet(); tab='obj'; objSel=id; objTab='ueb'; render(); window.scrollTo(0,0); return; }
+  if(a==='toSc'){ const id=sheet.made; closeSheet(); tab='obj'; objSel=id; objTab='apps'; render(); window.scrollTo(0,0); toast('Tippe bei Schnellcheck auf „Schnellcheck mit Objekt füllen“.'); return; }
+});
+
+/* ---- Objektseite: Unterlagen und Aufgaben (Paket C) ---- */
+function objExtras(m){ const its=hItems().filter(x=>x.obj===m.id&&!x.done).sort((a,b)=>(a.date||'9')<(b.date||'9')?-1:1), D=docsOf(m.id);
+  let h='<h2>Aufgaben und Termine</h2><div class="ui-card ui-today">'+(its.length?its.map(x=>rowHtml({date:x.date,ic:x.kind==='termin'?(x.date?String(+x.date.slice(8,10)):'◷'):'✓',col:x.kind==='termin'?'var(--c-hub)':(x.date&&x.date<todayS()?'var(--bad)':'var(--none)'),t:(x.time?x.time+' · ':'')+x.text,s:(x.kind==='termin'?'Termin':'Aufgabe')+(x.date?' · '+fmtD(x.date):''),act:`<button class="act" data-act="taskDone" data-id="${esc(x.id)}">Erledigt</button>`,sw:`<button data-act="taskDone" data-id="${esc(x.id)}">Erledigt</button>`})).join(''):'<p class="note" style="margin:0">Keine offenen Aufgaben.</p>')+`<div class="row-actions" style="margin:6px 0 0"><button class="btn small" data-act="sheet" data-v="aufgabe">Aufgabe</button><button class="btn small" data-act="sheet" data-v="termin">Termin</button></div></div>`;
+  const cost=D.filter(d=>ImmoCore.docIsCost(d.kind)&&d.amount>0&&(d.year||'')===String(new Date().getFullYear())).reduce((a,d)=>a+d.amount,0);
+  h+='<h2>Unterlagen</h2><div class="ui-card">'+(DOCS===null?'<p class="note" style="margin:0">Wird geladen …</p>':D.length?'<div class="ui-docs">'+D.map(d=>{ const img=/^image\//.test(d.mime||''); return `<div class="ui-doc"><button type="button" class="th" data-act="docOpen" data-id="${esc(d.id)}" data-dthumb="${esc(d.id)}" aria-label="Öffnen">${img?'':'PDF'}</button><div class="tx"><div class="t">${esc(d.name||'Dokument')}</div><div class="s">${esc(ImmoCore.docKindName(d.kind))}${d.date?' · '+fmtD(d.date):''}${d.amount?' · '+eur2(d.amount):''}${m.cover===d.id?' · Titelbild':''}</div></div>${img&&m.cover!==d.id?`<button type="button" data-act="docCover" data-id="${esc(d.id)}">Titelbild</button>`:''}<button type="button" data-act="docDel" data-id="${esc(d.id)}" aria-label="Löschen">✕</button></div>`; }).join('')+'</div>':'<p class="note" style="margin:0">Noch keine Unterlagen. Kaufvertrag, Mietverträge und Rechnungen gehören hierher.</p>')
+    +`<div class="row-actions" style="margin:8px 0 0"><button class="btn small primary" data-act="sheet" data-v="beleg">Beleg oder Dokument</button>${cost?`<span class="note" style="margin:0;align-self:center">Kosten ${new Date().getFullYear()}: ${eur2(cost)}</span>`:''}</div></div>`;
+  return h; }
+function docViewer(id){ const d=(DOCS||[]).find(x=>x.id===id); if(!d) return; ImmoCore.docs.blob(id).then(bl=>{ if(!bl){ toast('Datei nicht gefunden.'); return; } const u=URL.createObjectURL(bl), img=/^image\//.test(bl.type||d.mime||'');
+  const v=document.createElement('div'); v.className='ui-viewer'; v.innerHTML=`<div class="bar2"><b style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name||'Dokument')}</b><span style="display:flex;gap:8px"><button type="button" data-v="share">Teilen</button><button type="button" data-v="close">Schließen</button></span></div>${img?`<img src="${u}" alt="">`:`<iframe src="${u}" title="${esc(d.name||'Dokument')}"></iframe>`}`;
+  v.addEventListener('click',e=>{ const t=e.target.closest('[data-v]'); if(!t) return; if(t.dataset.v==='close'){ v.remove(); URL.revokeObjectURL(u); } else { const ext=img?(bl.type.split('/')[1]||'jpg'):'pdf'; ImmoCore.saveFile((d.name||'dokument')+'.'+ext,bl.type||d.mime||'application/octet-stream',bl); } });
+  document.body.appendChild(v); }); }
+
+/* ---- Steuerjahr je Objekt, Anlage V (Paket D) ---- */
+const afaRateDefault=bj=>{ bj=+bj||0; return bj&&bj<1925?2.5:(bj>=2023?3:2); };
+function buildingBase(m){ if(+m.afaBasis>0) return {v:+m.afaBasis,src:'eigene Angabe'}; const kp=+m.kp||0; if(!kp) return null; const land=(+m.brw||0)*(+m.gf||0); if(land>0&&land<kp) return {v:kp-land,src:'Kaufpreis minus Bodenwert (Bodenrichtwert × Fläche)'}; return {v:kp*0.8,src:'Annahme: 80 % des Kaufpreises'}; }
+function kaufDate(m){ if(ImmoCore.isDate(m.kauf)) return m.kauf; if(ImmoCore.isDate(m.rate1)) return addM(ymOf(m.rate1),-1)+'-01'; return ''; }
+function taxCalc(m,Y){ const S=rd(SUMKEY), tx=(S&&S.tax&&S.tax[m.id]&&S.tax[m.id][Y])||{miete:0,umlage:0}, pl=planOf(m), y=String(Y);
+  const zins=pl?pl.rows.filter(r=>r.ym.slice(0,4)===y).reduce((a,r)=>a+r.it,0):0, plan=pl&&(y+'-12')>ymOf(todayS());
+  const bb=buildingBase(m), rate=+m.afaPct>0?+m.afaPct:afaRateDefault(m.bj), kd=kaufDate(m); let mon=12; if(kd){ const ky=+kd.slice(0,4); mon=ky>Y?0:(ky===Y?13-(+kd.slice(5,7)):12); }
+  const afa=bb?bb.v*rate/100*mon/12:0, D=docsOf(m.id).filter(d=>(d.year||String(d.date||'').slice(0,4))===y), cs=k=>D.filter(d=>d.kind===k).reduce((a,d)=>a+(d.amount||0),0);
+  const er=cs('rechnung'), bk=cs('betrieb'), vw=cs('verwaltung'), ein=tx.miete+tx.umlage, wk=zins+afa+er+bk+vw;
+  let g15=null; if(kd&&bb){ const end=ImmoCore.addMonths(kd,36), net=docsOf(m.id).filter(d=>d.kind==='rechnung'&&d.date>=kd&&d.date<end).reduce((a,d)=>a+(d.amount||0)/1.19,0); if(todayS()<end||Y<=+end.slice(0,4)) g15={net,lim:bb.v*0.15,end}; }
+  return {tx,zins,plan,bb,rate,mon,afa,er,bk,vw,ein,wk,res:ein-wk,kd,g15,noVer:!(S&&S.tax),nDocs:D.length}; }
+function taxView(m){ const cy=new Date().getFullYear(), kd=kaufDate(m), y0=kd?Math.max(+kd.slice(0,4),cy-6):cy-3; let Y=+ui['taxYear']||cy-1; if(Y<y0||Y>cy) Y=Math.max(y0,cy-1);
+  const c=taxCalc(m,Y), row=(l,v,sub,neg)=>`<tr><td>${l}${sub?`<small>${sub}</small>`:''}</td><td>${neg&&v?'−':''}${eur2(Math.abs(v))}</td></tr>`;
+  let h=`<div class="ui-chips" role="group" aria-label="Jahr" style="margin:10px 0">${Array.from({length:cy-y0+1},(_,i)=>y0+i).map(y=>`<button type="button" data-act="taxYear" data-v="${y}" aria-pressed="${y===Y}">${y}</button>`).join('')}</div>`;
+  h+=`<div class="ui-kpis"><div class="ui-kpi"><span class="l">Ergebnis Vermietung ${Y}</span><span class="v" style="color:${c.res>=0?'var(--good)':'var(--bad)'}">${(c.res>=0?'+':'−')+eur(Math.abs(c.res))}</span><span class="s">${c.res>=0?'Überschuss':'Verlust'} vor persönlichem Steuersatz</span></div><div class="ui-kpi"><span class="l">Werbungskosten</span><span class="v">${eur(c.wk)}</span><span class="s">${c.nDocs} Beleg${c.nDocs===1?'':'e'} im Jahr</span></div></div>`;
+  h+='<h2>Anlage V</h2><div class="ui-card"><table class="ui-tax">'
+    +row('Mieteinnahmen',c.tx.miete,'Kaltmiete und Stellplatz, nach Zahlungseingang')+row('Umlagen',c.tx.umlage,'Nebenkosten-Vorauszahlungen')
+    +row('Schuldzinsen',c.zins,c.plan?'laut Tilgungsplan, Rest des Jahres geplant':'laut Tilgungsplan',1)
+    +row('AfA '+nf(c.rate,1)+' %'+(c.mon<12?' für '+c.mon+' Monate':''),c.afa,c.bb?'Gebäudewert '+eur(c.bb.v)+' · '+c.bb.src:'Kaufpreis fehlt',1)
+    +row('Erhaltungsaufwand',c.er,'Belege „Rechnung Erhaltung“',1)+row('Betriebskosten',c.bk,'Belege „Betriebskosten“',1)+row('Verwaltung und Sonstiges',c.vw,'Belege',1)
+    +`<tr class="sum"><td>${c.res>=0?'Überschuss':'Verlust'}</td><td>${(c.res>=0?'':'−')+eur2(Math.abs(c.res))}</td></tr></table></div>`;
+  if(c.noVer) h+='<p class="note">Die Mieteinnahmen kommen aus der Vermietung. Öffne sie einmal, damit sie ihre Zahlen für das Steuerjahr ablegt.</p>';
+  if(c.g15){ const over=c.g15.net>c.g15.lim; h+=`<div class="ui-card" style="flex-direction:row;align-items:center;gap:10px;margin-top:10px"><span class="ui-pill ${over?'bad':'mid'}">15-%-Grenze</span><span style="font-size:14px">${over?'Überschritten: ':'Noch '}${eur(Math.abs(c.g15.lim-c.g15.net))}${over?' über der Grenze. Die Kosten sind dann voraussichtlich anschaffungsnah und nur über die AfA absetzbar.':' bis zur Grenze (netto) bis '+fmtD(c.g15.end)+'.'}</span></div>`; }
+  h+=`<h2>Annahmen</h2><div class="ui-card"><div class="ui-row2"><label class="ui-field">Kaufdatum<input type="date" data-tx="kauf" value="${esc(m.kauf||'')}" placeholder="${esc(kd)}"></label><label class="ui-field">AfA-Satz %<input inputmode="decimal" data-tx="afaPct" value="${+m.afaPct>0?esc(nf(m.afaPct,1)):''}" placeholder="${esc(nf(afaRateDefault(m.bj),1))}"></label></div><label class="ui-field">Gebäudewert für die AfA<input inputmode="decimal" data-tx="afaBasis" value="${+m.afaBasis>0?esc(nf(m.afaBasis,0)):''}" placeholder="${c.bb?esc(nf(c.bb.v,0)):''}"></label><p class="note" style="margin:0">Leer gelassen nutzt der Hub das Baujahr für den Satz und Bodenrichtwert und Grundstücksfläche aus Objekt → Daten für den Gebäudewert. Anschaffungsnebenkosten sind nicht enthalten.</p></div>`;
+  h+=`<div class="row-actions"><button class="btn primary" data-act="taxCopy">Für den Steuerberater kopieren</button><button class="btn" data-px="repTaxOne" data-id="${esc(m.id)}">Als PDF</button></div><p class="note">Orientierung, keine Steuerberatung. Zahlungen zählen im Jahr des Eingangs. Geplante Renovierungen zählen erst, wenn du die Rechnung als Beleg ablegst.</p>`;
+  return h; }
+function taxText(m){ const Y=+ui['taxYear']||new Date().getFullYear()-1, c=taxCalc(m,Y), L=[];
+  L.push('Anlage V '+Y+' – '+(m.name||'Objekt')+(m.adresse?', '+m.adresse:''),'');
+  L.push('Mieteinnahmen: '+eur2(c.tx.miete),'Umlagen: '+eur2(c.tx.umlage),'Schuldzinsen: '+eur2(c.zins)+(c.plan?' (Rest geplant)':''),'AfA '+nf(c.rate,1)+' %'+(c.mon<12?' ('+c.mon+' Monate)':'')+': '+eur2(c.afa)+(c.bb?' – Gebäudewert '+eur(c.bb.v)+', '+c.bb.src:''),'Erhaltungsaufwand: '+eur2(c.er),'Betriebskosten: '+eur2(c.bk),'Verwaltung und Sonstiges: '+eur2(c.vw),'');
+  L.push((c.res>=0?'Überschuss: ':'Verlust: ')+eur2(Math.abs(c.res)));
+  const D=docsOf(m.id).filter(d=>(d.year||'')===String(Y)&&d.amount>0); if(D.length){ L.push('','Belege:'); D.forEach(d=>L.push('- '+fmtD(d.date)+' '+(d.name||'')+' ('+ImmoCore.docKindName(d.kind)+'): '+eur2(d.amount))); }
+  return L.join('\n'); }
+
+/* ---- Widget-Daten (Paket F) ---- */
+let wSig='';
+function pushWidget(D,S,T){ try{ const o={ts:Date.now(),offen:D.sum?r2(D.sum.arrears):0,offenN:D.ver?dueList(D.ver).length:0,next:T&&T[0]?{t:T[0].t,s:T[0].s,date:T[0].date}:null,lang:ImmoCore.lang}; const sig=JSON.stringify([o.offen,o.offenN,o.next,o.lang]); if(sig!==wSig){ wSig=sig; ImmoCore.widgetPush(o); } }catch(e){} }
+
+/* ---- Startup ---- */
+(function(){ const f=document.createElement('button'); f.type='button'; f.className='ui-fab'; f.setAttribute('aria-label','Schnell erfassen'); f.setAttribute('data-act','sheet'); f.textContent='+'; document.body.appendChild(f); })();
+loadDocs().then(()=>{ render(true); });
+
+/* Einsprung aus einer App: #t=<Bereich>&o=<Objekt> (gemeinsame Tab-Leiste, Kontextzeile) */
+function applyHash(){ const h=location.hash.replace(/^#/,''); if(!/(^|&)t=/.test(h)) return false; const q={}; h.split('&').forEach(x=>{ const i=x.indexOf('='); if(i>0) q[x.slice(0,i)]=decodeURIComponent(x.slice(i+1)); });
+  if(['home','obj','fin','miete','set','fristen'].includes(q.t)) tab=q.t;
+  if(q.t==='obj'){ objSel=(q.o&&getM(q.o))?q.o:''; if(objSel) objTab='ueb'; }
+  if(q.add) setTimeout(()=>openSheet('menu',(q.o&&getM(q.o))?q.o:''),50);
+  if(q.t==='fin'&&q.o&&getM(q.o)){ ui['finObj']=q.o; try{ localStorage.setItem(UIKEY,JSON.stringify(ui)); }catch(_){} }
+  try{ history.replaceState(null,'',location.pathname+location.search); }catch(_){}
+  return true; }
+applyHash();
+window.addEventListener('hashchange',()=>{ if(applyHash()){ render(); window.scrollTo(0,0); } });
+render();
+</script>
+<footer class="legal-foot"><button type="button" id="legalBtn">Impressum, Haftung &amp; Datenschutz</button></footer>
+<dialog id="legalDlg"><form method="dialog"><h2>Impressum, Haftung &amp; Datenschutz</h2>
+<p id="legalWho" hidden></p>
+<h3>Haftung</h3><p>Diese App liefert Orientierungsrechnungen. Sie ersetzt keine Steuer-, Rechts-, Finanzierungs- oder Anlageberatung. Ergebnisse, Fristen und Rechtshinweise können unvollständig oder nicht mehr aktuell sein und hängen von deinen Eingaben und vom Einzelfall ab. Für Richtigkeit und Vollständigkeit wird keine Gewähr übernommen. Prüfe wichtige Entscheidungen mit Steuerberater, Rechtsanwalt oder Bank.</p>
+<h3>Datenschutz</h3><p>Es gibt kein Konto, keinen Server der App und keine Werbung. Deine Eingaben werden ausschließlich lokal im Speicher deines Browsers auf deinem Gerät abgelegt und nicht an mich oder Dritte übertragen. Es werden weder Tracking noch Cookies zu Analysezwecken eingesetzt, und alle Schriften liegen auf demselben Server, es werden keine Schriften bei Google geladen.</p>
+<p>Beim Aufruf der Seite verarbeitet der Hosting-Anbieter GitHub (GitHub Pages) technisch notwendig Verbindungsdaten wie die IP-Adresse. Darauf hat die App keinen Einfluss, siehe die Datenschutzerklärung von GitHub.</p>
+<p>Die Daten bleiben auf deinem Gerät, solange du sie nicht selbst exportierst oder weitergibst. Wenn du Browserdaten löschst oder die App entfernst, sind sie weg. Lege deshalb regelmäßig ein Backup an, soweit die App es anbietet. Besonders bei Mieterdaten bist du selbst für den datenschutzgerechten Umgang verantwortlich.</p>
+<button class="legal-ok" value="ok">Schließen</button></form></dialog>
+<style>
+.legal-foot{text-align:center;padding:18px 16px calc(100px + env(safe-area-inset-bottom));font:12px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
+.legal-foot button{background:none;border:0;color:inherit;opacity:.6;text-decoration:underline;font:inherit;padding:8px;cursor:pointer}
+#legalDlg{color-scheme:light dark;background:Canvas;color:CanvasText;border:1px solid color-mix(in srgb,CanvasText 25%,transparent);border-radius:14px;padding:18px;max-width:min(460px,calc(100vw - 32px));max-height:80vh;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
+#legalDlg::backdrop{background:rgba(0,0,0,.5)}
+#legalDlg h2{font-size:18px;margin:0 0 8px}#legalDlg h3{font-size:14px;margin:14px 0 4px}#legalDlg p{margin:0 0 8px}
+.legal-ok{margin-top:8px;width:100%;min-height:44px;border-radius:10px;border:1px solid color-mix(in srgb,CanvasText 30%,transparent);background:none;color:inherit;font:inherit;font-weight:600;cursor:pointer}
+</style>
+<script>
+/* Anbieter (optional, z. B. Name und E-Mail für öffentliche Weitergabe): */
+var LEGAL_ANBIETER='';
+(function(){var b=document.getElementById('legalBtn'),d=document.getElementById('legalDlg'),w=document.getElementById('legalWho');
+if(LEGAL_ANBIETER){w.textContent='Anbieter: '+LEGAL_ANBIETER;w.hidden=false}
+if(location.protocol==='app:'){document.querySelectorAll('#legalDlg p').forEach(function(p){if(/GitHub Pages/.test(p.textContent))p.remove()})}
+b.addEventListener('click',function(){if(d.showModal)d.showModal();else d.setAttribute('open','')})})();
+</script>
+
+<script src="plus.js"></script>
+</body>
+</html>
